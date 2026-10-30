@@ -3,7 +3,15 @@
 #
 #   bash install.sh [install] [options]   install everything into ./.venv and the cache dir (default)
 #   bash install.sh verify                really test each component, print a PASS/FAIL table, exit 1 on any FAIL
+#   bash install.sh link-skills [opts]    install ONLY the single `video-making` skill into your agent(s)
+#                                         (also runs at the end of a default install)
 #   bash install.sh uninstall-notes       print what was installed and how to remove it (removes nothing)
+#
+# Options (link-skills; default = auto-detect: ~/.codex -> ~/.codex/skills, ~/.claude -> ~/.claude/skills):
+#   --link-codex / --link-claude  link into that agent even if its folder does not exist yet (creates skills/)
+#   --skills-dir DIR   link into DIR/video-making instead (e.g. a project's .agents/skills or .claude/skills)
+#   --copy             copy instead of symlink (copy is also the automatic fallback if a symlink fails)
+#   --no-link          default install skips linking
 #
 # Options (install):
 #   --apt              also install missing system packages with apt-get. Only used if you are root or have
@@ -67,15 +75,21 @@ fetch() {  # fetch URL DEST SHA256 - download to DEST.part, verify, then move in
 py() { local p; p="$(cat "$STATE/python" 2>/dev/null || echo python3)"; "$p" "$@"; }
 
 # ---- options -------------------------------------------------------------------------------------------------
-CMD=install; APT=0; WITH_CHROME=auto; MAPS=0; PUPPETEER=0; HYPERFRAMES=0; REMOTION=0; BLENDER=0; SKIP_ALIGNER=0
-for a in "$@"; do case "$a" in
-  install|verify|uninstall-notes) CMD="$a";;
+CMD=install; LINK=auto; LINK_CODEX=0; LINK_CLAUDE=0; SKILLS_DIR=""; COPY=0; APT=0; WITH_CHROME=auto; MAPS=0; PUPPETEER=0; HYPERFRAMES=0; REMOTION=0; BLENDER=0; SKIP_ALIGNER=0
+NEXT_DIR=0
+for a in "$@"; do
+  if [ $NEXT_DIR = 1 ]; then SKILLS_DIR="$a"; NEXT_DIR=0; continue; fi
+  case "$a" in
+  install|verify|uninstall-notes|link-skills) CMD="$a";;
+  --link-codex) LINK_CODEX=1;; --link-claude) LINK_CLAUDE=1;; --skills-dir) NEXT_DIR=1;; --skills-dir=*) SKILLS_DIR="${a#*=}";;
+  --copy) COPY=1;; --no-link) LINK=no;;
   --apt) APT=1;; --with-chrome) WITH_CHROME=yes;; --no-chrome) WITH_CHROME=no;;
   --with-maps) MAPS=1;; --with-puppeteer) PUPPETEER=1;; --with-hyperframes) HYPERFRAMES=1;; --with-remotion) REMOTION=1;;
   --with-blender) BLENDER=1;; --skip-aligner) SKIP_ALIGNER=1;;
-  -h|--help) sed -n '2,24p' "$0"; exit 0;;
+  -h|--help) awk 'NR>1 && /^#/{print; next} NR>1{exit}' "$0"; exit 0;;
   *) die "unknown argument: $a (see: bash install.sh --help)";;
 esac; done
+[ $NEXT_DIR = 1 ] && die "--skills-dir needs a folder"
 
 # ---- install -------------------------------------------------------------------------------------------------
 step_preflight() {
@@ -166,7 +180,59 @@ step_blender() {
 do_install() {
   step_preflight; step_python; step_models; step_chrome; step_npm; step_blender
   py -m pip freeze --all 2>/dev/null | grep -v '^-e ' > "$STATE/pip-freeze.txt" || true
+  if [ $LINK = no ]; then say "Skipping skill linking (--no-link). Later: bash install.sh link-skills"; else do_link_skills; fi
   say "Done. Now run:  bash install.sh verify   then   bash smoke-test/run.sh"
+}
+
+# ---- link-skills: install the ONE skill folder (video-making/) into agent skill dirs ----------------------------
+SKILL_SRC="$HERE/video-making"
+skill_targets() {  # prints one skills dir per line
+  if [ -n "$SKILLS_DIR" ]; then echo "$SKILLS_DIR"; return; fi
+  local any=0
+  if [ $LINK_CODEX = 1 ] || { [ $LINK_CLAUDE = 0 ] && [ -d "$HOME/.codex" ]; }; then echo "$HOME/.codex/skills"; any=1; fi
+  if [ $LINK_CLAUDE = 1 ] || { [ $LINK_CODEX = 0 ] && [ -d "$HOME/.claude" ]; }; then echo "$HOME/.claude/skills"; any=1; fi
+  return 0
+}
+copy_skill() {  # copy_skill DEST - our own copy, marked so we can refresh it later
+  rm -rf "$1.vsp-tmp" && cp -R "$SKILL_SRC" "$1.vsp-tmp" && echo "$HERE" > "$1.vsp-tmp/PACK_ROOT" && echo "copied by video-making install.sh" > "$1.vsp-tmp/.vsp-copy" \
+    && { [ ! -e "$1" ] || rm -rf "$1"; } && mv "$1.vsp-tmp" "$1"
+}
+link_one() {  # link_one SKILLS_DIR
+  local dir="$1" dest="$1/video-making"
+  mkdir -p "$dir" || { warn "cannot create $dir - skipped"; return 0; }
+  if [ -L "$dest" ]; then
+    if [ "$(readlink -f "$dest")" = "$(readlink -f "$SKILL_SRC")" ]; then echo "  ok (already linked) $dest -> $SKILL_SRC"; return 0; fi
+    warn "$dest is a symlink to $(readlink "$dest"), not this pack. Left it alone. Remove it yourself and re-run: bash install.sh link-skills"; return 0
+  fi
+  if [ -e "$dest" ]; then
+    if [ -f "$dest/.vsp-copy" ]; then copy_skill "$dest" && echo "  refreshed copy $dest (PACK_ROOT=$HERE)"; return 0; fi
+    warn "$dest already exists and was not made by this installer. Left it alone. Move it away and re-run: bash install.sh link-skills"; return 0
+  fi
+  if [ $COPY = 0 ] && ln -s "$SKILL_SRC" "$dest" 2>/dev/null && [ -f "$dest/SKILL.md" ]; then echo "  linked $dest -> $SKILL_SRC"; return 0; fi
+  [ -L "$dest" ] && rm -f "$dest"
+  copy_skill "$dest" && echo "  copied $SKILL_SRC -> $dest (PACK_ROOT=$HERE; re-run link-skills after git pull)" || warn "could not link or copy into $dest"
+}
+do_link_skills() {
+  say "Installing the single skill 'video-making' (router -> master video -> components)"
+  echo "$HERE" > "$SKILL_SRC/PACK_ROOT"     # lets the skill find the pack root (gitignored)
+  local t n=0; while IFS= read -r t; do [ -n "$t" ] && { link_one "$t"; n=$((n+1)); }; done < <(skill_targets)
+  if [ $n = 0 ]; then
+    echo "  no ~/.codex or ~/.claude found - nothing linked. Use: bash install.sh link-skills --link-codex | --link-claude | --skills-dir DIR"
+  fi
+  echo "  agents should load ONLY video-making/SKILL.md; it routes to everything else. Or set VSP_PACK=$HERE"
+}
+skill_status() {  # for verify: where is the skill installed?
+  local d found="" bad=""
+  for d in "$HOME/.codex/skills" "$HOME/.claude/skills" ${SKILLS_DIR:+"$SKILLS_DIR"}; do
+    local x="$d/video-making"
+    if [ -L "$x" ] && [ "$(readlink -f "$x")" = "$(readlink -f "$SKILL_SRC")" ]; then found="$found ${x/#"$HOME"/\~}(link)"
+    elif [ -f "$x/.vsp-copy" ] && [ -f "$x/SKILL.md" ]; then found="$found ${x/#"$HOME"/\~}(copy)"
+    elif [ -e "$x" ]; then bad="$bad ${x/#"$HOME"/\~}"; fi
+  done
+  if [ -n "$found" ]; then row "skill installed" PASS "video-making at$found"
+  elif [ -n "$bad" ]; then row "skill installed" FAIL "unrelated folder in the way:$bad"
+  elif [ -d "$HOME/.codex" ] || [ -d "$HOME/.claude" ]; then row "skill installed" FAIL "not linked yet: bash install.sh link-skills"
+  else row "skill installed" SKIP "no ~/.codex or ~/.claude; run link-skills --skills-dir DIR"; fi
 }
 
 # ---- verify --------------------------------------------------------------------------------------------------
@@ -199,6 +265,9 @@ ts=[round(s[0].start*st,2) for s in sp]; assert len(ts)==4 and ts==sorted(ts), t
   check "headless Chrome render" chrome_check
   local df_kb; df_kb=$(df -Pk "$HERE" | awk 'NR==2{print $4}'); if [ "$df_kb" -gt 1000000 ]; then row "disk space" PASS "$((df_kb/1024/1024)) GB free"; else row "disk space" FAIL "under 1 GB free"; fi
   local mem; mem=$(awk '/MemAvailable/{print int($2/1024)}' /proc/meminfo); if [ "$mem" -gt 1500 ]; then row "RAM available" PASS "$mem MB"; else row "RAM available" FAIL "$mem MB (need >= 1.5 GB free)"; fi
+  check "single SKILL.md + links" py "$HERE/scripts/check_links.py"
+  check "router keyword test"  py "$HERE/scripts/router_test.py"
+  skill_status
   # optional modules: SKIP when not installed
   for m in d3-geo puppeteer-core hyperframes remotion; do
     if [ -f "$HERE/node_modules/$m/package.json" ]; then check "optional: $m" node -e "console.log(require('$HERE/node_modules/$m/package.json').version)"; else row "optional: $m" SKIP "not installed (flag not used)"; fi
@@ -218,9 +287,11 @@ Nothing is removed automatically. The pack installed only these things:
   $HERE/node_modules         optional npm modules (if any)       ->  rm -rf "$HERE/node_modules" "$HERE/package-lock.json"
   $CACHE                     models, aligner, fonts, Chrome      ->  rm -rf "$CACHE"
 If the venv fallback was used, packages are in your user site: python3 -m pip uninstall --break-system-packages -r requirements.txt -r requirements-torch.txt
-Skills you copied to ~/.codex/skills or ~/.claude/skills: delete those folders by name (see AGENT_INSTALL.md).
+The skill link/copy made by link-skills (only these, if present):
+  ~/.codex/skills/video-making  ~/.claude/skills/video-making  (or DIR/video-making if you used --skills-dir)
+  -> rm ~/.codex/skills/video-making        (symlink)   or   rm -rf ~/.codex/skills/video-making   (copy with .vsp-copy)
 apt packages were only installed if you passed --apt; remove them with apt-get if you want.
 NOTES
 }
 
-case "$CMD" in install) do_install;; verify) do_verify;; uninstall-notes) do_uninstall_notes;; esac
+case "$CMD" in install) do_install;; verify) do_verify;; link-skills) do_link_skills;; uninstall-notes) do_uninstall_notes;; esac

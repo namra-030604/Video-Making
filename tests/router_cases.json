@@ -1,0 +1,18 @@
+[
+  {"prompt": "make a 30s animated explainer", "expect": "components/master-video/MASTER.md"},
+  {"prompt": "add captions", "expect": "components/subtitles-karaoke/COMPONENT.md"},
+  {"prompt": "generate a voiceover", "expect": "components/voice-and-audio/COMPONENT.md"},
+  {"prompt": "add a glitch transition", "expect": "components/motion-graphics/COMPONENT.md"},
+  {"prompt": "make it vertical", "expect": "components/vertical-9-16-framing/COMPONENT.md"},
+  {"prompt": "check audio loudness", "expect": "components/voice-and-audio/COMPONENT.md"},
+  {"prompt": "write a script", "expect": "components/script-writing/COMPONENT.md"},
+  {"prompt": "background music", "expect": "components/voice-and-audio/COMPONENT.md"},
+  {"prompt": "map animation", "expect": "components/motion-graphics/guides/map-and-timeline.md"},
+  {"prompt": "resume a failed render", "expect": "components/qc-and-render/COMPONENT.md"},
+  {"prompt": "cut this podcast into tiktok clips", "expect": "components/short-form-editing/COMPONENT.md"},
+  {"prompt": "a 15 second logo reveal promo synced to beats", "expect": "components/motion-studio/COMPONENT.md"},
+  {"prompt": "why did my render go black", "expect": "components/lessons-from-failures/COMPONENT.md"},
+  {"prompt": "karaoke subtitles with word highlight", "expect": "components/subtitles-karaoke/COMPONENT.md"},
+  {"prompt": "make me a video about volcanoes", "expect": "components/master-video/MASTER.md"},
+  {"prompt": "hello there", "expect": "components/master-video/MASTER.md", "note": "no keyword: default row"}
+]

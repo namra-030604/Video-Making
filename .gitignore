@@ -12,6 +12,7 @@ examples/*/audio/
 examples/*/align/
 examples/*/out/
 examples/*/PROGRESS.md
-skills/motion-graphics/gallery/out/
+video-making/components/motion-graphics/gallery/out/
+video-making/PACK_ROOT
 *.part
 .DS_Store

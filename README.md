@@ -1,7 +1,7 @@
 # Video-Making: a video skill pack for AI coding agents
 
-Skills, scripts and a tested pipeline that let an AI agent (Codex, Claude Code, or any agent that reads
-`SKILL.md` files) make narrated, captioned, music-backed videos **entirely from code, with free local tools**:
+One installable agent skill (`video-making`), scripts and a tested pipeline that let an AI agent (Codex,
+Claude Code, or any agent that reads `SKILL.md` files) make narrated, captioned, music-backed videos **entirely from code, with free local tools**:
 Kokoro text-to-speech, word-exact karaoke subtitles, canvas animation captured one frame at a time by headless
 Chrome, ffmpeg mixing at -14 LUFS, and automatic quality checks.
 
@@ -11,21 +11,37 @@ git clone https://github.com/namra-030604/Video-Making && cd Video-Making && bas
 bash smoke-test/run.sh            # makes smoke-test/out/project/out/hello-world.mp4 (~7 s) and checks it
 bash scripts/new_project.sh my-video && bash scripts/build.sh my-video
 ```
-Agents: follow [AGENT_INSTALL.md](AGENT_INSTALL.md) to install the skills into Codex or Claude.
+`install.sh` also links the one skill folder into `~/.codex/skills/video-making` and/or
+`~/.claude/skills/video-making` (auto-detected; options in `bash install.sh --help`). Agents: see
+[AGENT_INSTALL.md](AGENT_INSTALL.md).
+
+## One skill: router -> master video -> components
+```
+video-making/
+  SKILL.md                     the ONLY skill entry point: a router (keywords -> component -> what to run)
+  components/
+    master-video/MASTER.md     full end-to-end orchestration (default route for "make a video")
+    script-writing/  voice-and-audio/  subtitles-karaoke/  vertical-9-16-framing/  short-form-editing/
+    qc-and-render/  lessons-from-failures/  video-production-standard/      (each a COMPONENT.md)
+    motion-studio/   COMPONENT.md + templates/ scripts/ references/        (music-led motion pieces)
+    motion-graphics/ COMPONENT.md + fx.js + guides/ (18 effect guides) + gallery/ + test/
+```
+The router reads the request and sends the agent to one component: script/text, voice/music/SFX/loudness,
+motion graphics (or the maps guide), music-led promos, captions/karaoke, 9:16 framing, short-form editing,
+rendering/QC/resume, lessons, the production standard, or (default, for a whole video) the master component.
+`python3 scripts/router_test.py` checks the routing table against `tests/router_cases.json`: it is a
+deterministic **keyword** check, not an LLM test.
 
 ## What you get
 | Folder | Contents |
 |---|---|
-| `skills/` | 11 agent skills (see below), each a folder with a `SKILL.md` |
-| `scripts/` | the pipeline: `make_voice.py`, `align_words.py`, `make_audio.py`, `stills.mjs`, `render.mjs`, `subtitle_qc.mjs`, `qc_final.py`, `framediff.py`, `build.sh`, `new_project.sh` |
+| `video-making/` | the single skill (router `SKILL.md`, master component, 10 sub-components, 18 motion guides) |
+| `scripts/` | the pipeline: `make_voice.py`, `align_words.py`, `make_audio.py`, `stills.mjs`, `render.mjs`, `subtitle_qc.mjs`, `qc_final.py`, `framediff.py`, `build.sh`, `new_project.sh`; checks: `router_test.py`, `check_links.py` |
+| `tests/router_cases.json` | sample prompts and the component each must route to |
 | `lib/browser.mjs` | a small dependency-free Chrome DevTools driver (no npm packages needed) |
 | `examples/hello-world/` | a complete 540x960 narrated scene to copy |
 | `smoke-test/run.sh` | end-to-end test of the whole pipeline |
 | `install.sh` | installs and verifies everything (project-local `.venv`, cache in `~/.cache/video-skill-pack`) |
-
-Skills: `video-skill-pack` (router), `video-production-standard`, `script-writing`, `voice-and-audio`,
-`subtitles-karaoke`, `motion-studio`, `motion-graphics` (18 effect guides + `fx.js`), `vertical-9-16-framing`,
-`short-form-editing`, `qc-and-render`, `lessons-from-failures`.
 
 ## Requirements
 - Linux x86_64 (tested on Debian 13). macOS/Windows are not supported by `install.sh` (untested).

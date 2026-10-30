@@ -2,7 +2,7 @@
   "name": "video-skill-pack",
   "version": "1.0.0",
   "private": true,
-  "description": "Agent skills + scripts for making narrated videos from code (free local voice, karaoke subtitles, frame-exact Chrome render).",
+  "description": "One agent skill (video-making) + scripts for making narrated videos from code (free local voice, karaoke subtitles, frame-exact Chrome render).",
   "license": "MIT",
   "type": "module",
   "engines": {
