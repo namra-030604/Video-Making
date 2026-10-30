@@ -1,0 +1,4 @@
+# CPU-only PyTorch for MMS_FA forced alignment. Installed from the official PyTorch CPU index:
+#   pip install --index-url https://download.pytorch.org/whl/cpu -r requirements-torch.txt
+torch==2.11.0+cpu
+torchaudio==2.11.0+cpu

@@ -1,0 +1,22 @@
+{
+  "title": "motion-studio starter (3 s demo)",
+  "bpm": 120,
+  "fps": 60,
+  "size": [1920, 1080],
+  "duration": 3.0,
+  "seed": 42,
+  "beats": [
+    { "id": "1.1", "t": 0.0, "section": "Hook", "action": "UI card assembles with elastic pop, headline words punch in (serif + sans)", "cut": true,
+      "sfx": [ { "t": 0.0, "type": "whoosh" }, { "t": 0.18, "type": "pop" }, { "t": 0.30, "type": "pop" } ] },
+    { "id": "1.2", "t": 0.5, "section": "Hook", "action": "cursor glides in toward the button", "sfx": [] },
+    { "id": "2.1", "t": 1.0, "section": "Feature 1", "action": "cursor clicks button: squash, ring, flare, chromatic spike, card turns neon",
+      "sfx": [ { "t": 1.0, "type": "click" }, { "t": 1.02, "type": "pop" } ] },
+    { "id": "2.2", "t": 1.5, "section": "Feature 1", "action": "torn-paper wipe into dark-sky neon scene", "cut": true,
+      "sfx": [ { "t": 1.5, "type": "whoosh" } ] },
+    { "id": "3.1", "t": 2.0, "section": "Payoff", "action": "animated split screen opens, three panels", "cut": true,
+      "sfx": [ { "t": 2.0, "type": "impact" } ] },
+    { "id": "3.2", "t": 2.5, "section": "Outro", "action": "kinetic sign-off line, grain + bloom hold", "sfx": [ { "t": 2.5, "type": "pop" } ] }
+  ],
+  "voice": null,
+  "notes": "Every visual change has a cursor action or beat behind it. Cuts are on the 0.5 s grid (120 BPM)."
+}

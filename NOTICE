@@ -1,0 +1,14 @@
+Video-Making (video skill pack)
+Copyright (c) 2026 Video-Making contributors. Licensed under the MIT License (see LICENSE).
+
+This repository contains only original code and documentation. It does not redistribute third-party software,
+models or fonts; install.sh downloads them from their official sources, verified by version and sha256, and each
+keeps its own license (full list with URLs in CREDITS.md). Notably:
+- Kokoro-82M model and voices: Apache-2.0 (hexgrad).
+- MMS_FA alignment model weights: CC-BY-NC 4.0, non-commercial use only (Meta AI, via torchaudio).
+- espeak-ng and phonemizer: GPL-3.0 (installed as Python dependencies, used as separate programs/libraries).
+- FFmpeg: LGPL/GPL depending on the build (system package).
+- Chrome for Testing / Chromium: BSD-3-Clause plus third-party licenses.
+- Inter and Caveat fonts: SIL Open Font License 1.1.
+- Optional: Remotion uses the Remotion License (company license needed above 3 people); hyperframes and
+  puppeteer-core are Apache-2.0; the optional map modules (d3-geo, topojson-client, world-atlas) are ISC; Blender is GPL.

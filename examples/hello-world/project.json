@@ -1,0 +1,19 @@
+{
+  "name": "hello-world",
+  "width": 540,
+  "height": 960,
+  "fps": 30,
+  "page": "index.html",
+  "lines": [
+    "Hello, video skill pack.",
+    "Every frame here is drawn by code.",
+    "Voice, captions and music are all free."
+  ],
+  "voice": { "engine": "kokoro", "voice": "af_heart", "speed": 1.0, "lang": "en-us", "lead_s": 0.15, "gap_s": 0.25, "tail_s": 0.45 },
+  "subtitles": { "safe_top": 0.74, "safe_bottom": 0.90, "safe_side": 0.06, "font_px": 34 },
+  "audio": { "lufs": -14, "true_peak": -1.5, "bed": "pad", "bed_level_db": -30,
+             "sfx": [ { "word": "hello", "kind": "swish", "gain": 0.06 }, { "word": "code", "kind": "pop", "gain": 0.05 }, { "word": "free", "kind": "tick", "gain": 0.05 } ] },
+  "render": { "part_frames": 60, "crf": 20, "threads": 2, "small_height": 0, "hash_dirs": [] },
+  "qc": { "freeze_s": 0.75, "max_mb": 5, "wpm_range": [150, 172] },
+  "output": "out/hello-world.mp4"
+}

@@ -1,0 +1,86 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>motion-studio</title>
+<style>html,body{margin:0;background:#000;overflow:hidden}canvas{display:block}</style>
+</head><body><canvas id="c"></canvas>
+<script src="mslib.js"></script>
+<script>
+// RENDER CONTRACT: window.seek(t) redraws the whole frame from t alone. No CSS animation, no timers,
+// no Math.random/Date.now, no state carried between frames. Seeded noise only (MS.rng / MS.hash).
+const W = 1920, H = 1080;
+window.W = W; window.H = H; window.FPS = 60; window.DURATION = 3.0;
+const cv = document.getElementById('c'); cv.width = W; cv.height = H;
+const ctx = cv.getContext('2d');
+const { ease, inv, clamp, lerp } = MS;
+const P = MS.palettes.warmNeutral, D = MS.palettes.darkSkyNeon;
+let BEATS = null;
+const bt = (id) => BEATS.beats.find((b) => b.id === id).t;
+
+// cursor path: every UI change is caused by this cursor
+const CURSOR = [ { t: 0.45, x: 1980, y: 900 }, { t: 0.95, x: 1340, y: 640 }, { t: 1.0, x: 1340, y: 640, click: true }, { t: 1.45, x: 1500, y: 760 } ];
+const BTN = { x: 1180, y: 600, w: 320, h: 84 };
+
+function sceneA(t) {
+  ctx.fillStyle = P.bg; ctx.fillRect(0, 0, W, H);
+  // subtle drifting grid so the background is never static
+  ctx.save(); ctx.strokeStyle = 'rgba(0,0,0,.06)'; ctx.lineWidth = 2; const off = (t * 40) % 80;
+  for (let x = -80 + off; x < W; x += 80) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
+  ctx.restore();
+  // headline, left aligned (never a centred title on a gradient)
+  MS.kineticLine(ctx, [ { text: 'Make', font: 'sans' }, { text: 'it', font: 'serif' }, { text: 'move.', font: 'sans', color: P.accent } ], t,
+    { x: 150, y: 470, size: 150, t0: 0.08, stagger: 0.11, align: 'left', color: P.ink });
+  // UI card assembles: pieces fly in with springs
+  const clicked = t >= 1.0, cardK = MS.spring(t - 0.05, 1.6, 0.42);
+  const ringOn = clicked ? MS.spring(t - 1.0, 2.4, 0.5) : 0;
+  MS.withT(ctx, lerp(1650, 1340, cardK), 560, (1 - cardK) * 0.25, 1, 1, () => {
+    ctx.save(); ctx.shadowColor = 'rgba(40,20,0,.25)'; ctx.shadowBlur = 50; ctx.shadowOffsetY = 24;
+    MS.roundRect(ctx, -260, -300, 520, 600, 36); ctx.fillStyle = clicked ? D.ui : P.ui; ctx.fill(); ctx.restore();
+    for (let i = 0; i < 3; i++) { const k = MS.spring(t - 0.15 - i * 0.07, 2, 0.45); MS.roundRect(ctx, -200, -230 + i * 70, 400 * k * (1 - i * 0.2), 26, 13); ctx.fillStyle = clicked ? 'rgba(61,252,255,.35)' : 'rgba(0,0,0,.12)'; ctx.fill(); }
+    // button with squash & stretch on the click
+    const w = MS.hitWobble(t, 1.0, 0.3), [sx, sy] = MS.squash(w);
+    const bk = MS.spring(t - 0.3, 2.2, 0.4);
+    MS.withT(ctx, 0, 80, 0, sx * bk, sy * bk, () => {
+      MS.roundRect(ctx, -160, -42, 320, 84, 42);
+      if (clicked) MS.neon(ctx, () => { ctx.fillStyle = D.neon; ctx.fill(); }, D.neon, 30 * ringOn); else { ctx.fillStyle = P.ink; ctx.fill(); }
+      ctx.fillStyle = clicked ? '#04121a' : '#fff'; ctx.font = '800 40px ' + MS.FONTS.sans; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(clicked ? 'Live ✓' : 'Go live', 0, 2);
+    });
+  });
+  const c = MS.cursorAt(CURSOR, t); MS.drawCursor(ctx, c, { keys: CURSOR, t, ring: P.accent });
+  const fl = Math.exp(-9 * Math.max(0, t - 1.0)) * (t >= 1.0); MS.flare(ctx, 1340, 640, { intensity: fl, r: 200 });
+}
+function sceneB(t) {
+  const g = ctx.createLinearGradient(0, 0, 0, H); g.addColorStop(0, D.bg); g.addColorStop(1, D.bg2); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  const r = MS.rng(BEATS.seed); ctx.fillStyle = '#fff';
+  for (let i = 0; i < 140; i++) { const x = r() * W, y = r() * H * 0.8, tw = 0.5 + 0.5 * Math.sin(t * 6 + i); ctx.globalAlpha = 0.25 + 0.6 * tw * r(); ctx.fillRect(x, y, 2, 2); }
+  ctx.globalAlpha = 1;
+  const pk = inv(2.0, 2.6, t);
+  if (t < 2.0) {
+    MS.neon(ctx, () => { ctx.strokeStyle = D.neon; ctx.lineWidth = 6; ctx.beginPath(); ctx.arc(W / 2, H / 2 + 40, 160 + 20 * MS.pulse(t, BEATS.bpm), 0, Math.PI * 2); ctx.stroke(); }, D.neon);
+  } else {
+    MS.splitScreen(ctx, [0, 1, 2].map((i) => (c, rc) => {
+      c.fillStyle = [D.ui, '#1d1650', '#0d2a3a'][i]; c.fillRect(rc.x, rc.y, rc.w, rc.h);
+      c.save(); c.fillStyle = [D.neon, D.accent, '#ffe14d'][i]; c.font = (i === 1 ? 'italic 400 120px ' + MS.FONTS.serif : '800 110px ' + MS.FONTS.sans);
+      c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(['Draw', 'in', 'code'][i], rc.x + rc.w / 2, rc.y + rc.h / 2); c.restore();
+    }), ease.outCubic(pk), { gap: 14, gapColor: '#000' });
+  }
+  if (t >= 2.5) { ctx.save(); ctx.fillStyle = 'rgba(7,10,26,.55)'; ctx.fillRect(0, H - 220, W, 220); ctx.restore();
+    MS.kineticLine(ctx, [ { text: 'every', font: 'serif' }, { text: 'frame.', font: 'sans', color: D.neon } ], t, { x: W / 2, y: H - 80, size: 96, t0: 2.5, color: D.ink }); }
+}
+window.seek = (t) => {
+  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over'; ctx.filter = 'none';
+  const tear = inv(1.5, 1.95, t);
+  if (tear <= 0) sceneA(t);
+  else if (tear >= 1) sceneB(t);
+  else { sceneA(t); MS.tearReveal(ctx, tear, () => sceneB(t), { seed: 9 }); } // outgoing scene is masked, text never overlaps
+  MS.bloom(ctx, { strength: t > 1.5 ? 0.55 : 0.25 });
+  const ca = 2 + 10 * Math.exp(-10 * Math.max(0, t - 1.0)) * (t >= 1.0) + 6 * Math.exp(-12 * Math.max(0, t - 2.0)) * (t >= 2.0);
+  MS.chromatic(ctx, ca);
+  MS.grain(ctx, t, { amount: 0.08, fps: window.FPS });
+  MS.vignette(ctx, 0.3);
+};
+(async () => {
+  BEATS = await (await fetch('beats.json')).json();
+  await MS.loadPackFonts();   // Inter + Caveat from install.sh; add your own OFL fonts under assets/fonts with FontFace
+  window.seek(0); window.READY = true;
+})();
+</script></body></html>

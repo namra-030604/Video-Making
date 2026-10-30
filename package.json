@@ -1,0 +1,12 @@
+{
+  "name": "video-skill-pack",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Agent skills + scripts for making narrated videos from code (free local voice, karaoke subtitles, frame-exact Chrome render).",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
+  "optionalNotes": "No npm packages are needed. install.sh --with-maps/--with-puppeteer/--with-hyperframes/--with-remotion adds pinned optional modules to ./node_modules."
+}

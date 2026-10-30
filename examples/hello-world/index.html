@@ -1,0 +1,93 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>hello-world scene</title>
+<style>html,body{margin:0;background:#000}canvas{display:block}</style></head>
+<body><canvas id="art"></canvas>
+<script>
+// A tiny, original example scene for the video skill pack.
+// Contract: window.ready (Promise), window.init(data), window.renderFrame(t) -> {subtitleBoxes, activeWord, activeStart}
+// Everything is a pure function of t (no timers, no Math.random), so any frame can be rendered in any order.
+const cv = document.getElementById('art'), g = cv.getContext('2d');
+let P = {width: 540, height: 960, subtitles: {}}, WORDS = [], META = {duration: 6};
+const SANS = '"Inter","DejaVu Sans",sans-serif', HAND = '"Caveat","DejaVu Sans",cursive';
+async function loadFont(name, file) {
+  try { const f = new FontFace(name, `url(/__vsp/fonts/${file})`); await f.load(); document.fonts.add(f); return true; }
+  catch { return false; }  // fall back to DejaVu Sans if install.sh fonts are missing
+}
+window.ready = Promise.all([loadFont('Inter', 'Inter.ttf'), loadFont('Caveat', 'Caveat.ttf')]).then(r => { window.fontsLoaded = r; return document.fonts.ready; });
+window.init = d => { P = d.project; WORDS = d.words || []; META = d.meta || META; cv.width = P.width; cv.height = P.height; window.DURATION = META.duration; };
+cv.width = P.width; cv.height = P.height;
+
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const easeOut = x => 1 - Math.pow(1 - clamp(x), 3);
+const easeOutBack = x => { x = clamp(x); const c = 1.70158; return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2); };
+const hash = n => { const s = Math.sin(n * 127.1) * 43758.5453; return s - Math.floor(s); };
+
+function background(t, W, H) {
+  const gr = g.createLinearGradient(0, 0, W * 0.3, H);
+  const h = 230 + 20 * Math.sin(t * 0.6);
+  gr.addColorStop(0, `hsl(${h},60%,14%)`); gr.addColorStop(1, `hsl(${h + 50},55%,8%)`);
+  g.fillStyle = gr; g.fillRect(0, 0, W, H);
+  for (let i = 0; i < 40; i++) {             // drifting light motes: guarantees no static frames
+    const x = (hash(i) * W + t * (12 + 30 * hash(i + 9))) % W, y = (hash(i + 3) * H - t * (20 + 40 * hash(i + 5)) % H + H) % H;
+    const r = 1.5 + 3 * hash(i + 7), a = 0.25 + 0.35 * Math.sin(t * 2 + i) ** 2;
+    g.fillStyle = `rgba(255,220,170,${a})`; g.beginPath(); g.arc(x, y, r, 0, 7); g.fill();
+  }
+  const rg = g.createRadialGradient(W / 2, H * 0.36, 10, W / 2, H * 0.36, W * 0.8);  // soft glow behind title
+  rg.addColorStop(0, 'rgba(255,170,90,0.20)'); rg.addColorStop(1, 'rgba(255,170,90,0)'); g.fillStyle = rg; g.fillRect(0, 0, W, H);
+}
+
+function title(t, W, H) {
+  const words = ['Hello,', 'video', 'skill', 'pack'];
+  const start = WORDS.length ? WORDS[0].start : 0.15;
+  g.textAlign = 'center'; g.textBaseline = 'middle';
+  words.forEach((w, i) => {
+    const local = (t - start - i * 0.18) / 0.45, s = easeOutBack(local), a = clamp(local * 2);
+    const y = H * 0.25 + i * 74 + (1 - easeOut(local)) * 40 + Math.sin(t * 1.4 + i) * 3;
+    g.save(); g.globalAlpha = a; g.translate(W / 2, y); g.scale(s, s);
+    g.font = `800 ${i === 0 ? 72 : 62}px ${SANS}`; g.fillStyle = i === 0 ? '#ffd08a' : '#ffffff';
+    g.shadowColor = 'rgba(0,0,0,0.5)'; g.shadowBlur = 12; g.fillText(w, 0, 0); g.restore();
+  });
+  // hand-drawn underline that strokes on during line 2
+  const l2 = WORDS.find(w => w.line_index === 2), u = l2 ? easeOut((t - l2.start) / 1.2) : 0;
+  if (u > 0) { g.save(); g.strokeStyle = '#ffb35c'; g.lineWidth = 6; g.lineCap = 'round'; g.beginPath();
+    for (let k = 0; k <= 40 * u; k++) { const x = W * 0.2 + (W * 0.6) * k / 40, y = H * 0.25 + 3 * 74 + 44 + Math.sin(k * 0.5) * 4; k ? g.lineTo(x, y) : g.moveTo(x, y); }
+    g.stroke(); g.font = `600 40px ${HAND}`; g.fillStyle = `rgba(255,255,255,${u})`; g.fillText('made with code', W / 2, H * 0.25 + 3 * 74 + 100); g.restore(); }
+}
+
+function subtitles(t, W, H) {
+  const S = P.subtitles || {}, size = S.font_px || 34, top = H * (S.safe_top ?? 0.74), bottom = H * (S.safe_bottom ?? 0.90), side = W * (S.safe_side ?? 0.06);
+  const lines = [...new Set(WORDS.map(w => w.line_index))];
+  const cur = lines.filter(li => { const ws = WORDS.filter(w => w.line_index === li); return t >= ws[0].start - 0.1 && t <= ws[ws.length - 1].end + 0.3; }).pop();
+  if (cur === undefined) return {subtitleBoxes: [], activeWord: null, activeStart: null};
+  const ws = WORDS.filter(w => w.line_index === cur);
+  g.font = `800 ${size}px ${SANS}`; g.textAlign = 'left'; g.textBaseline = 'alphabetic';
+  const rows = [[]]; let rowW = 0; const space = g.measureText(' ').width, maxW = W - 2 * side - 24;
+  for (const w of ws) { const ww = g.measureText(w.word.toUpperCase()).width; if (rowW && rowW + space + ww > maxW) { rows.push([]); rowW = 0; } rows[rows.length - 1].push({...w, ww}); rowW += (rowW ? space : 0) + ww; }
+  const lineH = size * 1.25, blockH = rows.length * lineH + 20, y0 = (top + bottom) / 2 - blockH / 2;
+  let active = null; for (const w of ws) if (t >= w.start) active = w;
+  const boxes = [];
+  rows.forEach((row, r) => {
+    const rw = row.reduce((s, w, i) => s + w.ww + (i ? space : 0), 0), x0 = W / 2 - rw / 2, y = y0 + 10 + r * lineH;
+    g.fillStyle = 'rgba(0,0,0,0.55)'; const bx = x0 - 12, bw = rw + 24; g.beginPath(); g.roundRect(bx, y, bw, lineH, 10); g.fill(); boxes.push([bx, y, bw, lineH]);
+    let x = x0;
+    for (const w of row) {
+      const on = active && w.start === active.start, said = t >= w.start;
+      g.fillStyle = on ? '#ffd08a' : said ? '#ffffff' : 'rgba(255,255,255,0.55)';
+      g.save(); if (on) { const p = easeOutBack((t - w.start) / 0.12); g.translate(x + w.ww / 2, y + lineH * 0.78); g.scale(0.9 + 0.1 * p, 0.9 + 0.1 * p); g.fillText(w.word.toUpperCase(), -w.ww / 2, 0); }
+      else g.fillText(w.word.toUpperCase(), x, y + lineH * 0.78);
+      g.restore(); x += w.ww + space;
+    }
+  });
+  return {subtitleBoxes: boxes, activeWord: active ? active.word : null, activeStart: active ? active.start : null};
+}
+
+window.renderFrame = t => {
+  const W = cv.width, H = cv.height;
+  g.setTransform(1, 0, 0, 1, 0, 0); g.globalAlpha = 1; g.shadowBlur = 0;
+  background(t, W, H); title(t, W, H);
+  const fade = clamp(t / 0.25) * clamp((META.duration - t) / 0.3);   // fade in/out (never fully black for long)
+  const sub = subtitles(t, W, H);
+  if (fade < 1) { g.fillStyle = `rgba(0,0,0,${(1 - fade) * 0.6})`; g.fillRect(0, 0, W, H); }
+  return sub;
+};
+</script></body></html>
