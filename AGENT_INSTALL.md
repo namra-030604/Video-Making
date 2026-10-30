@@ -29,8 +29,11 @@ whole video, or one part such as captions, voice, effects, 9:16, rendering). Not
 - falls back to a **copy** if a symlink cannot be made (or with `--copy`); copies contain `PACK_ROOT` and a
   `.vsp-copy` marker, and are refreshed on the next `link-skills` (re-run it after `git pull`);
 - **never** replaces a `video-making` folder or symlink it did not create: it warns and leaves it alone.
+- if `video-making` is already a symlink to **another clone of this pack** (or a broken link to a deleted clone),
+  it keeps it and tells you; `bash install.sh link-skills --relink` points it at the current clone. `verify`
+  shows WARN (not FAIL) for the "another clone" case, since that link still works.
 
-Options: `--link-codex`, `--link-claude` (create that agent's skills folder even if the agent folder is missing),
+Options: `--relink`, `--link-codex`, `--link-claude` (create that agent's skills folder even if the agent folder is missing),
 `--skills-dir DIR` (for example a project's `.agents/skills` or `.claude/skills`), `--copy`, and `--no-link`
 (on `install`, skip linking). Manual fallback: `ln -s "$PACK/video-making" ~/.claude/skills/video-making`.
 The skill finds the pack root from `VSP_PACK`, else `video-making/PACK_ROOT` (written by `link-skills`), else
@@ -77,6 +80,7 @@ phases and opens `script-writing`, `voice-and-audio`, `motion-graphics` and the 
 | Alignment below 97% | Spell numbers and symbols as words; remove words the voice skips; check `audio/line_NN.wav`. |
 | Captions out of the safe zone | Lower `subtitles.font_px` or widen `safe_side`; see the `subtitles-karaoke` component. |
 | `stills.mjs --check` FAIL | The scene uses timers, `Math.random`, `Date.now`, CSS animations, or state from earlier frames. Make it a pure function of t. |
+| `skill installed` WARN/FAIL: linked to another or deleted clone | `bash install.sh link-skills --relink` (only repoints links that target a clone of this pack). |
 | Download fails | Re-run `install.sh` (each download is retried 3 times; finished, checksum-verified files are kept); behind a proxy set `HTTPS_PROXY`. |
 
 ## 7. Rules for agents using this pack

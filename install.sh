@@ -11,6 +11,8 @@
 #   --link-codex / --link-claude  link into that agent even if its folder does not exist yet (creates skills/)
 #   --skills-dir DIR   link into DIR/video-making instead (e.g. a project's .agents/skills or .claude/skills)
 #   --copy             copy instead of symlink (copy is also the automatic fallback if a symlink fails)
+#   --relink           repoint an existing video-making symlink that targets ANOTHER clone of this pack (or a
+#                      deleted one) to this clone. Symlinks or folders that are not this pack are never touched.
 #   --no-link          default install skips linking
 #
 # Options (install):
@@ -75,14 +77,14 @@ fetch() {  # fetch URL DEST SHA256 - download to DEST.part, verify, then move in
 py() { local p; p="$(cat "$STATE/python" 2>/dev/null || echo python3)"; "$p" "$@"; }
 
 # ---- options -------------------------------------------------------------------------------------------------
-CMD=install; LINK=auto; LINK_CODEX=0; LINK_CLAUDE=0; SKILLS_DIR=""; COPY=0; APT=0; WITH_CHROME=auto; MAPS=0; PUPPETEER=0; HYPERFRAMES=0; REMOTION=0; BLENDER=0; SKIP_ALIGNER=0
+CMD=install; RELINK=0; LINK=auto; LINK_CODEX=0; LINK_CLAUDE=0; SKILLS_DIR=""; COPY=0; APT=0; WITH_CHROME=auto; MAPS=0; PUPPETEER=0; HYPERFRAMES=0; REMOTION=0; BLENDER=0; SKIP_ALIGNER=0
 NEXT_DIR=0
 for a in "$@"; do
   if [ $NEXT_DIR = 1 ]; then SKILLS_DIR="$a"; NEXT_DIR=0; continue; fi
   case "$a" in
   install|verify|uninstall-notes|link-skills) CMD="$a";;
   --link-codex) LINK_CODEX=1;; --link-claude) LINK_CLAUDE=1;; --skills-dir) NEXT_DIR=1;; --skills-dir=*) SKILLS_DIR="${a#*=}";;
-  --copy) COPY=1;; --no-link) LINK=no;;
+  --copy) COPY=1;; --no-link) LINK=no;; --relink) RELINK=1;;
   --apt) APT=1;; --with-chrome) WITH_CHROME=yes;; --no-chrome) WITH_CHROME=no;;
   --with-maps) MAPS=1;; --with-puppeteer) PUPPETEER=1;; --with-hyperframes) HYPERFRAMES=1;; --with-remotion) REMOTION=1;;
   --with-blender) BLENDER=1;; --skip-aligner) SKIP_ALIGNER=1;;
@@ -197,12 +199,22 @@ copy_skill() {  # copy_skill DEST - our own copy, marked so we can refresh it la
   rm -rf "$1.vsp-tmp" && cp -R "$SKILL_SRC" "$1.vsp-tmp" && echo "$HERE" > "$1.vsp-tmp/PACK_ROOT" && echo "copied by video-making install.sh" > "$1.vsp-tmp/.vsp-copy" \
     && { [ ! -e "$1" ] || rm -rf "$1"; } && mv "$1.vsp-tmp" "$1"
 }
+is_pack_skill() {  # is_pack_skill DIR - DIR is the video-making folder of some clone of this pack
+  [ -f "$1/SKILL.md" ] && grep -q '^name: video-making$' "$1/SKILL.md" && [ -f "$1/../install.sh" ]
+}
 link_one() {  # link_one SKILLS_DIR
   local dir="$1" dest="$1/video-making"
   mkdir -p "$dir" || { warn "cannot create $dir - skipped"; return 0; }
   if [ -L "$dest" ]; then
     if [ "$(readlink -f "$dest")" = "$(readlink -f "$SKILL_SRC")" ]; then echo "  ok (already linked) $dest -> $SKILL_SRC"; return 0; fi
-    warn "$dest is a symlink to $(readlink "$dest"), not this pack. Left it alone. Remove it yourself and re-run: bash install.sh link-skills"; return 0
+    local old; old="$(readlink "$dest")"
+    if [ ! -e "$dest" ] || is_pack_skill "$dest"; then   # dangling, or another clone of this same pack
+      if [ $RELINK = 1 ]; then ln -sfn "$SKILL_SRC" "$dest" && echo "  relinked $dest -> $SKILL_SRC (was -> $old)"; return 0; fi
+      if [ ! -e "$dest" ]; then warn "$dest is a broken symlink (-> $old). Kept. Point it here with: bash install.sh link-skills --relink"
+      else echo "  kept $dest -> $old (another clone of this pack; it works). To use this clone: bash install.sh link-skills --relink"; fi
+      return 0
+    fi
+    warn "$dest is a symlink to $old, which is not this pack. Left it alone. Remove it yourself and re-run: bash install.sh link-skills"; return 0
   fi
   if [ -e "$dest" ]; then
     if [ -f "$dest/.vsp-copy" ]; then copy_skill "$dest" && echo "  refreshed copy $dest (PACK_ROOT=$HERE)"; return 0; fi
@@ -222,15 +234,18 @@ do_link_skills() {
   echo "  agents should load ONLY video-making/SKILL.md; it routes to everything else. Or set VSP_PACK=$HERE"
 }
 skill_status() {  # for verify: where is the skill installed?
-  local d found="" bad=""
+  local d found="" bad="" other=""
   for d in "$HOME/.codex/skills" "$HOME/.claude/skills" ${SKILLS_DIR:+"$SKILLS_DIR"}; do
     local x="$d/video-making"
     if [ -L "$x" ] && [ "$(readlink -f "$x")" = "$(readlink -f "$SKILL_SRC")" ]; then found="$found ${x/#"$HOME"/\~}(link)"
+    elif [ -L "$x" ] && [ ! -e "$x" ]; then bad="$bad ${x/#"$HOME"/\~}(broken link: run link-skills --relink)"
+    elif [ -L "$x" ] && is_pack_skill "$x"; then other="$other ${x/#"$HOME"/\~} -> $(readlink "$x")"
     elif [ -f "$x/.vsp-copy" ] && [ -f "$x/SKILL.md" ]; then found="$found ${x/#"$HOME"/\~}(copy)"
     elif [ -e "$x" ]; then bad="$bad ${x/#"$HOME"/\~}"; fi
   done
   if [ -n "$found" ]; then row "skill installed" PASS "video-making at$found"
-  elif [ -n "$bad" ]; then row "skill installed" FAIL "unrelated folder in the way:$bad"
+  elif [ -n "$other" ]; then row "skill installed" WARN "linked to another clone:$other (works; link-skills --relink to use this one)"
+  elif [ -n "$bad" ]; then row "skill installed" FAIL "not usable (not made by this installer, or broken):$bad"
   elif [ -d "$HOME/.codex" ] || [ -d "$HOME/.claude" ]; then row "skill installed" FAIL "not linked yet: bash install.sh link-skills"
   else row "skill installed" SKIP "no ~/.codex or ~/.claude; run link-skills --skills-dir DIR"; fi
 }
