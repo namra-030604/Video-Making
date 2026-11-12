@@ -1,0 +1,42 @@
+{
+  "key": "8a4daab54ea53b12",
+  "engine": "kokoro",
+  "voice": "af_heart",
+  "speed": 1.0,
+  "lines": [
+    "Breaking news: chip boss caught in a hot GPU affair tonight.",
+    "Not a person. Just a glowing green graphics card.",
+    "Midnight sneak: red roses in one hand, silicon in the other.",
+    "Fancy candle dinner. She sips coolant. He melts like solder.",
+    "Home alone, the dumped CPU cries into melted ice cream.",
+    "Then paparazzi flood the giant server room with camera flashes.",
+    "Press conference. He shrugs hard in that leather jacket.",
+    "I can explain this. It was just inference. All fiction."
+  ],
+  "line_durations": [
+    3.650375,
+    2.9964583333333334,
+    3.7060833333333334,
+    3.72875,
+    3.5700833333333333,
+    3.94525,
+    2.857625,
+    3.1585
+  ],
+  "offsets": [
+    0.15,
+    4.050375,
+    7.296833333333334,
+    11.252916666666668,
+    15.231666666666667,
+    19.051750000000002,
+    23.247000000000003,
+    26.354625000000002
+  ],
+  "duration": 29.963125,
+  "word_count": 80,
+  "speech_duration": 27.613125,
+  "wpm_overall": 160.19690870027742,
+  "wpm_speech": 173.8303795749304,
+  "pause_fraction": 0.07842973655117758
+}
