@@ -1,0 +1,566 @@
+{
+  "key": "8a4daab54ea53b12",
+  "matched_fraction": 1.0,
+  "words": [
+    {
+      "line_index": 1,
+      "word": "Breaking",
+      "start": 0.1701,
+      "end": 0.5311,
+      "score": 0.984
+    },
+    {
+      "line_index": 1,
+      "word": "news",
+      "start": 0.5712,
+      "end": 0.8921,
+      "score": 0.983
+    },
+    {
+      "line_index": 1,
+      "word": "chip",
+      "start": 1.3334,
+      "end": 1.5139,
+      "score": 0.972
+    },
+    {
+      "line_index": 1,
+      "word": "boss",
+      "start": 1.5941,
+      "end": 1.8548,
+      "score": 0.999
+    },
+    {
+      "line_index": 1,
+      "word": "caught",
+      "start": 1.9351,
+      "end": 2.1356,
+      "score": 0.96
+    },
+    {
+      "line_index": 1,
+      "word": "in",
+      "start": 2.1557,
+      "end": 2.2159,
+      "score": 0.775
+    },
+    {
+      "line_index": 1,
+      "word": "a",
+      "start": 2.2359,
+      "end": 2.256,
+      "score": 0.992
+    },
+    {
+      "line_index": 1,
+      "word": "hot",
+      "start": 2.3162,
+      "end": 2.5368,
+      "score": 0.901
+    },
+    {
+      "line_index": 1,
+      "word": "GPU",
+      "start": 2.617,
+      "end": 2.978,
+      "score": 0.898
+    },
+    {
+      "line_index": 1,
+      "word": "affair",
+      "start": 3.0583,
+      "end": 3.3391,
+      "score": 0.924
+    },
+    {
+      "line_index": 1,
+      "word": "tonight",
+      "start": 3.3792,
+      "end": 3.7201,
+      "score": 0.978
+    },
+    {
+      "line_index": 2,
+      "word": "Not",
+      "start": 4.1107,
+      "end": 4.2917,
+      "score": 0.922
+    },
+    {
+      "line_index": 2,
+      "word": "a",
+      "start": 4.3118,
+      "end": 4.3319,
+      "score": 0.999
+    },
+    {
+      "line_index": 2,
+      "word": "person",
+      "start": 4.3923,
+      "end": 4.8146,
+      "score": 0.969
+    },
+    {
+      "line_index": 2,
+      "word": "Just",
+      "start": 5.1766,
+      "end": 5.3777,
+      "score": 0.97
+    },
+    {
+      "line_index": 2,
+      "word": "a",
+      "start": 5.3978,
+      "end": 5.4179,
+      "score": 0.999
+    },
+    {
+      "line_index": 2,
+      "word": "glowing",
+      "start": 5.4782,
+      "end": 5.8402,
+      "score": 0.995
+    },
+    {
+      "line_index": 2,
+      "word": "green",
+      "start": 5.9005,
+      "end": 6.1419,
+      "score": 0.999
+    },
+    {
+      "line_index": 2,
+      "word": "graphics",
+      "start": 6.2022,
+      "end": 6.6044,
+      "score": 0.877
+    },
+    {
+      "line_index": 2,
+      "word": "card",
+      "start": 6.6446,
+      "end": 6.9865,
+      "score": 0.983
+    },
+    {
+      "line_index": 3,
+      "word": "Midnight",
+      "start": 7.3369,
+      "end": 7.6975,
+      "score": 0.944
+    },
+    {
+      "line_index": 3,
+      "word": "sneak",
+      "start": 7.7576,
+      "end": 8.0581,
+      "score": 0.95
+    },
+    {
+      "line_index": 3,
+      "word": "red",
+      "start": 8.5188,
+      "end": 8.6791,
+      "score": 0.999
+    },
+    {
+      "line_index": 3,
+      "word": "roses",
+      "start": 8.7592,
+      "end": 9.0998,
+      "score": 0.998
+    },
+    {
+      "line_index": 3,
+      "word": "in",
+      "start": 9.1399,
+      "end": 9.22,
+      "score": 0.999
+    },
+    {
+      "line_index": 3,
+      "word": "one",
+      "start": 9.3001,
+      "end": 9.4203,
+      "score": 0.993
+    },
+    {
+      "line_index": 3,
+      "word": "hand",
+      "start": 9.4404,
+      "end": 9.7408,
+      "score": 0.997
+    },
+    {
+      "line_index": 3,
+      "word": "silicon",
+      "start": 9.9812,
+      "end": 10.3619,
+      "score": 0.744
+    },
+    {
+      "line_index": 3,
+      "word": "in",
+      "start": 10.442,
+      "end": 10.5021,
+      "score": 0.986
+    },
+    {
+      "line_index": 3,
+      "word": "the",
+      "start": 10.5422,
+      "end": 10.6223,
+      "score": 0.997
+    },
+    {
+      "line_index": 3,
+      "word": "other",
+      "start": 10.6824,
+      "end": 10.8827,
+      "score": 1.0
+    },
+    {
+      "line_index": 4,
+      "word": "Fancy",
+      "start": 11.3331,
+      "end": 11.6539,
+      "score": 0.99
+    },
+    {
+      "line_index": 4,
+      "word": "candle",
+      "start": 11.734,
+      "end": 12.0949,
+      "score": 0.959
+    },
+    {
+      "line_index": 4,
+      "word": "dinner",
+      "start": 12.135,
+      "end": 12.3756,
+      "score": 0.875
+    },
+    {
+      "line_index": 4,
+      "word": "She",
+      "start": 12.7965,
+      "end": 12.8767,
+      "score": 0.963
+    },
+    {
+      "line_index": 4,
+      "word": "sips",
+      "start": 12.9569,
+      "end": 13.1574,
+      "score": 0.997
+    },
+    {
+      "line_index": 4,
+      "word": "coolant",
+      "start": 13.2175,
+      "end": 13.5984,
+      "score": 0.765
+    },
+    {
+      "line_index": 4,
+      "word": "He",
+      "start": 13.8791,
+      "end": 13.9392,
+      "score": 0.932
+    },
+    {
+      "line_index": 4,
+      "word": "melts",
+      "start": 13.9994,
+      "end": 14.26,
+      "score": 0.999
+    },
+    {
+      "line_index": 4,
+      "word": "like",
+      "start": 14.3001,
+      "end": 14.4805,
+      "score": 0.999
+    },
+    {
+      "line_index": 4,
+      "word": "solder",
+      "start": 14.5206,
+      "end": 14.8814,
+      "score": 0.636
+    },
+    {
+      "line_index": 5,
+      "word": "Home",
+      "start": 15.2918,
+      "end": 15.4723,
+      "score": 0.933
+    },
+    {
+      "line_index": 5,
+      "word": "alone",
+      "start": 15.4924,
+      "end": 15.8935,
+      "score": 0.954
+    },
+    {
+      "line_index": 5,
+      "word": "the",
+      "start": 16.1743,
+      "end": 16.2546,
+      "score": 0.919
+    },
+    {
+      "line_index": 5,
+      "word": "dumped",
+      "start": 16.3348,
+      "end": 16.6156,
+      "score": 0.71
+    },
+    {
+      "line_index": 5,
+      "word": "CPU",
+      "start": 16.7159,
+      "end": 17.117,
+      "score": 0.765
+    },
+    {
+      "line_index": 5,
+      "word": "cries",
+      "start": 17.1772,
+      "end": 17.5783,
+      "score": 0.678
+    },
+    {
+      "line_index": 5,
+      "word": "into",
+      "start": 17.6385,
+      "end": 17.7989,
+      "score": 0.998
+    },
+    {
+      "line_index": 5,
+      "word": "melted",
+      "start": 17.8591,
+      "end": 18.18,
+      "score": 0.987
+    },
+    {
+      "line_index": 5,
+      "word": "ice",
+      "start": 18.3003,
+      "end": 18.4407,
+      "score": 0.975
+    },
+    {
+      "line_index": 5,
+      "word": "cream",
+      "start": 18.4808,
+      "end": 18.7215,
+      "score": 0.979
+    },
+    {
+      "line_index": 6,
+      "word": "Then",
+      "start": 19.0918,
+      "end": 19.252,
+      "score": 1.0
+    },
+    {
+      "line_index": 6,
+      "word": "paparazzi",
+      "start": 19.3121,
+      "end": 19.973,
+      "score": 0.44
+    },
+    {
+      "line_index": 6,
+      "word": "flood",
+      "start": 20.4136,
+      "end": 20.6138,
+      "score": 0.658
+    },
+    {
+      "line_index": 6,
+      "word": "the",
+      "start": 20.6539,
+      "end": 20.714,
+      "score": 0.996
+    },
+    {
+      "line_index": 6,
+      "word": "giant",
+      "start": 20.774,
+      "end": 21.1145,
+      "score": 0.713
+    },
+    {
+      "line_index": 6,
+      "word": "server",
+      "start": 21.1746,
+      "end": 21.4549,
+      "score": 0.936
+    },
+    {
+      "line_index": 6,
+      "word": "room",
+      "start": 21.495,
+      "end": 21.6953,
+      "score": 0.993
+    },
+    {
+      "line_index": 6,
+      "word": "with",
+      "start": 21.8555,
+      "end": 21.9756,
+      "score": 0.999
+    },
+    {
+      "line_index": 6,
+      "word": "camera",
+      "start": 22.0157,
+      "end": 22.3161,
+      "score": 0.964
+    },
+    {
+      "line_index": 6,
+      "word": "flashes",
+      "start": 22.3962,
+      "end": 22.8969,
+      "score": 0.996
+    },
+    {
+      "line_index": 7,
+      "word": "Press",
+      "start": 23.2671,
+      "end": 23.4684,
+      "score": 1.0
+    },
+    {
+      "line_index": 7,
+      "word": "conference",
+      "start": 23.5287,
+      "end": 24.0721,
+      "score": 0.886
+    },
+    {
+      "line_index": 7,
+      "word": "He",
+      "start": 24.374,
+      "end": 24.4343,
+      "score": 0.997
+    },
+    {
+      "line_index": 7,
+      "word": "shrugs",
+      "start": 24.4947,
+      "end": 24.7764,
+      "score": 0.86
+    },
+    {
+      "line_index": 7,
+      "word": "hard",
+      "start": 24.8368,
+      "end": 25.0984,
+      "score": 0.997
+    },
+    {
+      "line_index": 7,
+      "word": "in",
+      "start": 25.1387,
+      "end": 25.1789,
+      "score": 0.903
+    },
+    {
+      "line_index": 7,
+      "word": "that",
+      "start": 25.199,
+      "end": 25.3399,
+      "score": 0.994
+    },
+    {
+      "line_index": 7,
+      "word": "leather",
+      "start": 25.36,
+      "end": 25.5411,
+      "score": 0.642
+    },
+    {
+      "line_index": 7,
+      "word": "jacket",
+      "start": 25.6015,
+      "end": 26.0241,
+      "score": 0.966
+    },
+    {
+      "line_index": 8,
+      "word": "I",
+      "start": 26.4552,
+      "end": 26.4753,
+      "score": 1.0
+    },
+    {
+      "line_index": 8,
+      "word": "can",
+      "start": 26.4954,
+      "end": 26.6162,
+      "score": 0.999
+    },
+    {
+      "line_index": 8,
+      "word": "explain",
+      "start": 26.6363,
+      "end": 27.0789,
+      "score": 0.99
+    },
+    {
+      "line_index": 8,
+      "word": "this",
+      "start": 27.1191,
+      "end": 27.3605,
+      "score": 0.977
+    },
+    {
+      "line_index": 8,
+      "word": "It",
+      "start": 27.7428,
+      "end": 27.8031,
+      "score": 0.999
+    },
+    {
+      "line_index": 8,
+      "word": "was",
+      "start": 27.8031,
+      "end": 27.9037,
+      "score": 0.999
+    },
+    {
+      "line_index": 8,
+      "word": "just",
+      "start": 27.9238,
+      "end": 28.1049,
+      "score": 1.0
+    },
+    {
+      "line_index": 8,
+      "word": "inference",
+      "start": 28.1853,
+      "end": 28.6682,
+      "score": 0.697
+    },
+    {
+      "line_index": 8,
+      "word": "All",
+      "start": 28.8895,
+      "end": 28.9901,
+      "score": 0.995
+    },
+    {
+      "line_index": 8,
+      "word": "fiction",
+      "start": 29.0504,
+      "end": 29.4125,
+      "score": 0.969
+    }
+  ]
+}

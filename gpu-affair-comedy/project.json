@@ -1,0 +1,66 @@
+{
+  "name": "gpu-affair-comedy",
+  "width": 720,
+  "height": 1280,
+  "fps": 30,
+  "page": "index.html",
+  "lines": [
+    "Breaking news: chip boss caught in a hot GPU affair tonight.",
+    "Not a person. Just a glowing green graphics card.",
+    "Midnight sneak: red roses in one hand, silicon in the other.",
+    "Fancy candle dinner. She sips coolant. He melts like solder.",
+    "Home alone, the dumped CPU cries into melted ice cream.",
+    "Then paparazzi flood the giant server room with camera flashes.",
+    "Press conference. He shrugs hard in that leather jacket.",
+    "I can explain this. It was just inference. All fiction."
+  ],
+  "voice": {
+    "engine": "kokoro",
+    "voice": "af_heart",
+    "speed": 1.0,
+    "lang": "en-us",
+    "lead_s": 0.15,
+    "gap_s": 0.25,
+    "tail_s": 0.45
+  },
+  "subtitles": {
+    "safe_top": 0.74,
+    "safe_bottom": 0.90,
+    "safe_side": 0.06,
+    "font_px": 42
+  },
+  "audio": {
+    "lufs": -14,
+    "true_peak": -1.5,
+    "bed": "pad",
+    "bed_level_db": -30,
+    "pad_root_hz": 110,
+    "seed": 7,
+    "sfx": [
+      { "word": "Breaking", "kind": "riser", "gain": 0.08 },
+      { "word": "affair", "kind": "impact", "gain": 0.08 },
+      { "word": "glowing", "kind": "swish", "gain": 0.06 },
+      { "word": "roses", "kind": "pop", "gain": 0.06 },
+      { "word": "dinner", "kind": "tick", "gain": 0.05 },
+      { "word": "cries", "kind": "swish", "gain": 0.06 },
+      { "word": "paparazzi", "kind": "impact", "gain": 0.09 },
+      { "word": "flashes", "kind": "pop", "gain": 0.07 },
+      { "word": "shrugs", "kind": "tick", "gain": 0.05 },
+      { "word": "inference", "kind": "impact", "gain": 0.08 },
+      { "word": "fiction", "kind": "riser", "gain": 0.07 }
+    ]
+  },
+  "render": {
+    "part_frames": 90,
+    "crf": 20,
+    "threads": 2,
+    "small_height": 0,
+    "hash_dirs": []
+  },
+  "qc": {
+    "freeze_s": 0.75,
+    "max_mb": 40,
+    "wpm_range": [150, 172]
+  },
+  "output": "out/gpu-affair-comedy.mp4"
+}
