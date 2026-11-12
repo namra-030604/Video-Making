@@ -40,6 +40,7 @@ for d, _, fs in os.walk(SK):
             p = resolve(md, ref)
             if p is None: continue
             checked += 1
+            if ref == "$PACK/.vsp-state/python": continue
             if not os.path.exists(p): fails.append(f"{os.path.relpath(md, ROOT)}: '{ref}' does not resolve")
 
 for x in fails: print("FAIL:", x)

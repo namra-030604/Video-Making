@@ -11,11 +11,15 @@ Usage  python3 framediff.py out/final.mp4 [--fps 10] [--threshold 8] [--static-s
   i.e. a full-screen flash. Not allowed (accessibility + "no full-screen flashing" rule).
 Exit code 0 = pass, 3 = problems found. Prints a JSON report.
 """
-import argparse, json, subprocess, sys
+import argparse, json, subprocess, sys, os
+_skill = __import__("pathlib").Path(__file__).resolve().parents[3]
+_root = __import__("pathlib").Path(os.environ.get("VSP_PACK") or ((_skill / "PACK_ROOT").read_text(encoding="utf-8").strip() if (_skill / "PACK_ROOT").exists() else _skill.parent))
+sys.path.insert(0, str(_root / "scripts"))
+from vsp_common import tool_path
 import numpy as np
 
 def probe(path):
-    r = subprocess.run(["ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries", "stream=width,height:format=duration",
+    r = subprocess.run([tool_path("ffprobe"), "-v", "error", "-select_streams", "v:0", "-show_entries", "stream=width,height:format=duration",
                         "-of", "json", path], capture_output=True, text=True, check=True)
     j = json.loads(r.stdout); s = j["streams"][0]
     return s["width"], s["height"], float(j["format"]["duration"])
@@ -27,7 +31,7 @@ def main():
     a = ap.parse_args()
     w, h, dur = probe(a.video)
     ow = 320; oh = int(round(h * ow / w / 2) * 2)
-    raw = subprocess.run(["ffmpeg", "-loglevel", "error", "-i", a.video, "-vf", f"fps={a.fps},scale={ow}:{oh}", "-f", "rawvideo", "-pix_fmt", "gray", "-"],
+    raw = subprocess.run([tool_path("ffmpeg"), "-loglevel", "error", "-i", a.video, "-vf", f"fps={a.fps},scale={ow}:{oh}", "-f", "rawvideo", "-pix_fmt", "gray", "-"],
                          capture_output=True, check=True).stdout
     fr = np.frombuffer(raw, np.uint8).reshape(-1, oh, ow).astype(np.int16)
     motion, flashes, rows = [], [], []
@@ -51,7 +55,7 @@ def main():
            "static_stretches_sec": statics, "full_screen_flashes_at": flashes,
            "verdict": "PASS" if not statics and not flashes else "FIX", "per_sample": rows}
     if a.json:
-        with open(a.json, "w") as fh: json.dump(rep, fh, indent=2)
+        with open(a.json, "w", encoding="utf-8") as fh: json.dump(rep, fh, indent=2)
     short = {k: v for k, v in rep.items() if k != "per_sample"}
     print(json.dumps(short, indent=2))
     sys.exit(0 if rep["verdict"] == "PASS" else 3)

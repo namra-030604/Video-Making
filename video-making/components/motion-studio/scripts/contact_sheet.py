@@ -11,6 +11,10 @@ or at EVERY grid beat (60/bpm) with --every-beat. Writes the grid PNG plus a sco
 (out/scorecard_template.json) with the 7 critique axes. Codex can open the PNG and look at it.
 """
 import argparse, json, os, subprocess, sys, tempfile, shutil
+_skill = __import__("pathlib").Path(__file__).resolve().parents[3]
+_root = __import__("pathlib").Path(os.environ.get("VSP_PACK") or ((_skill / "PACK_ROOT").read_text(encoding="utf-8").strip() if (_skill / "PACK_ROOT").exists() else _skill.parent))
+sys.path.insert(0, str(_root / "scripts"))
+from vsp_common import tool_path, font_path
 from PIL import Image, ImageDraw, ImageFont
 
 HERE = os.path.dirname(os.path.realpath(__file__))
@@ -20,14 +24,13 @@ def pack_root():
     """Repo root: $VSP_PACK, else the PACK_ROOT file written by install.sh into copied skills, else ../../../.. from here."""
     if os.environ.get("VSP_PACK"): return os.environ["VSP_PACK"]
     marker = os.path.join(HERE, "..", "..", "..", "PACK_ROOT")
-    if os.path.exists(marker): return open(marker).read().strip()
+    if os.path.exists(marker): return open(marker, encoding="utf-8").read().strip()
     return os.path.abspath(os.path.join(HERE, "..", "..", "..", ".."))
 AXES = ["readability", "motion_quality", "brand_accuracy", "sound_sync", "composition", "typography", "hook_strength"]
 
 def font(size):
-    for p in ["/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"]:
-        if os.path.exists(p): return ImageFont.truetype(p, size)
-    return ImageFont.load_default()
+    path = font_path()
+    return ImageFont.truetype(str(path), size) if path else ImageFont.load_default(size=size)
 
 def main():
     ap = argparse.ArgumentParser()
@@ -42,7 +45,7 @@ def main():
     a = ap.parse_args()
     proj = os.path.abspath(a.project)
     beats_path = a.beats or os.path.join(proj, "beats.json")
-    B = json.load(open(beats_path))
+    B = json.load(open(beats_path, encoding="utf-8"))
     bpm, dur = B.get("bpm", 120), B["duration"]
     bl = 60.0 / bpm
     if a.every_beat:
@@ -59,12 +62,12 @@ def main():
     if a.video:
         for i, t in enumerate(times):
             f = os.path.join(tmp, f"{i:03d}.png")
-            subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-ss", f"{t:.3f}", "-i", a.video, "-frames:v", "1", f], check=True)
+            subprocess.run([tool_path("ffmpeg"), "-y", "-loglevel", "error", "-ss", f"{t:.3f}", "-i", a.video, "-frames:v", "1", f], check=True)
             files.append(f)
     else:
         # render the stills with the pack's driver (scripts/stills.mjs at the repo root)
         stills = os.path.join(pack_root(), "scripts", "stills.mjs")
-        r = subprocess.run(["node", os.path.abspath(stills), "--project", proj, "--times", ",".join(f"{t:.4f}" for t in times)], capture_output=True, text=True)
+        r = subprocess.run([tool_path("node"), os.path.abspath(stills), "--project", proj, "--times", ",".join(f"{t:.4f}" for t in times)], capture_output=True, text=True)
         sys.stderr.write(r.stderr)
         if r.returncode != 0: sys.exit("stills.mjs failed:\n" + r.stdout[-2000:])
         files = [os.path.join(proj, "out", "stills", f"still_{i + 1:02d}.png") for i in range(len(times))]
@@ -82,7 +85,7 @@ def main():
     os.makedirs(os.path.dirname(out), exist_ok=True); sheet.save(out)
     card = {"round": 1, "sheet": out, "scores": {k: None for k in AXES}, "worst_3_problems": ["", "", ""], "fixes_applied": [],
             "pass_rule": "every axis >= 8, otherwise fix the worst 3 problems and re-render the sheet"}
-    with open(os.path.join(os.path.dirname(out), "scorecard_template.json"), "w") as fh: json.dump(card, fh, indent=2)
+    with open(os.path.join(os.path.dirname(out), "scorecard_template.json"), "w", encoding="utf-8") as fh: json.dump(card, fh, indent=2)
     shutil.rmtree(tmp, ignore_errors=True)
     print(json.dumps({"contact_sheet": out, "tiles": len(ims), "times": [round(t, 3) for t in times]}))
 

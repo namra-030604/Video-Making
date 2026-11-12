@@ -16,12 +16,12 @@ import argparse, json, os, re, subprocess, sys, hashlib
 import numpy as np
 import soundfile as sf
 sys.path.insert(0, os.path.dirname(__file__))
-from vsp_common import load_project, note, vget
+from vsp_common import tool_path, load_project, note, vget
 
 SR = 48000
 
 def measure(path):
-    r = subprocess.run(["ffmpeg", "-hide_banner", "-nostats", "-i", str(path), "-af", "loudnorm=I=-14:TP=-1.5:LRA=7:print_format=json", "-f", "null", "-"],
+    r = subprocess.run([tool_path("ffmpeg"), "-hide_banner", "-nostats", "-i", str(path), "-af", "loudnorm=I=-14:TP=-1.5:LRA=7:print_format=json", "-f", "null", "-"],
                        capture_output=True, text=True, check=True)
     return json.loads(re.search(r'\{\s*"input_i".*?\}', r.stderr, re.S).group())
 
@@ -64,12 +64,12 @@ def main():
     ap = argparse.ArgumentParser(); ap.add_argument("--project", default="."); ap.add_argument("--force", action="store_true")
     a = ap.parse_args()
     root, cfg = load_project(a.project)
-    meta = json.loads((root / "audio/voice_meta.json").read_text())
-    wj = root / "align/words.json"; words = json.loads(wj.read_text())["words"] if wj.exists() else []
+    meta = json.loads((root / "audio/voice_meta.json").read_text(encoding="utf-8"))
+    wj = root / "align/words.json"; words = json.loads(wj.read_text(encoding="utf-8"))["words"] if wj.exists() else []
     target_i = float(vget(cfg, "audio.lufs", -14)); target_tp = float(vget(cfg, "audio.true_peak", -1.5))
     key = hashlib.sha256((meta["key"] + json.dumps(cfg.get("audio", {}), sort_keys=True)).encode()).hexdigest()[:16]
     lj = root / "audio/loudness.json"
-    if not a.force and lj.exists() and json.loads(lj.read_text()).get("key") == key and (root / "audio/mix.wav").exists():
+    if not a.force and lj.exists() and json.loads(lj.read_text(encoding="utf-8")).get("key") == key and (root / "audio/mix.wav").exists():
         print("audio: up to date, skipped"); return
     v, sr = sf.read(root / "audio/voice.wav", dtype="float32")
     if sr != SR:
@@ -83,7 +83,7 @@ def main():
     out = root / "audio/mix.wav"; gain = 0.0
     for attempt in range(5):
         af = flt + (f",volume={gain:.2f}dB" if gain else "") + f",alimiter=limit={10 ** ((target_tp - 0.6) / 20):.4f}:level=false:attack=1:release=50"
-        subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-y", "-i", str(raw_path), "-af", af, "-ar", str(SR), "-ac", "2", str(out)], check=True)
+        subprocess.run([tool_path("ffmpeg"), "-hide_banner", "-loglevel", "error", "-y", "-i", str(raw_path), "-af", af, "-ar", str(SR), "-ac", "2", str(out)], check=True)
         r = measure(out); I, TP = float(r["input_i"]), float(r["input_tp"])
         print(f"loudness attempt {attempt + 1}: {I:.2f} LUFS, {TP:.2f} dBTP (gain {gain:+.2f} dB)")
         if abs(I - target_i) <= 0.5 and TP <= target_tp: break
@@ -91,7 +91,7 @@ def main():
     else:
         sys.exit(f"FAIL: could not reach {target_i} LUFS / {target_tp} dBTP")
     raw_path.unlink()
-    lj.write_text(json.dumps({"key": key, "integrated_lufs": I, "true_peak_dbtp": TP, "lra": float(r["input_lra"]), "target_lufs": target_i, "target_true_peak": target_tp}, indent=2) + "\n")
+    lj.write_text(json.dumps({"key": key, "integrated_lufs": I, "true_peak_dbtp": TP, "lra": float(r["input_lra"]), "target_lufs": target_i, "target_true_peak": target_tp}, indent=2) + "\n", encoding="utf-8")
     note(root, f"audio: mix.wav {I:.2f} LUFS, {TP:.2f} dBTP")
 
 if __name__ == "__main__":

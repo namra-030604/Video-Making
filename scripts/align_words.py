@@ -26,9 +26,9 @@ def main():
     ap = argparse.ArgumentParser(); ap.add_argument("--project", default="."); ap.add_argument("--force", action="store_true")
     a = ap.parse_args()
     root, _ = load_project(a.project)
-    meta = json.loads((root / "audio/voice_meta.json").read_text())
+    meta = json.loads((root / "audio/voice_meta.json").read_text(encoding="utf-8"))
     out = root / "align/words.json"
-    if not a.force and out.exists() and json.loads(out.read_text() or "{}").get("key") == meta["key"]:
+    if not a.force and out.exists() and json.loads(out.read_text(encoding="utf-8") or "{}").get("key") == meta["key"]:
         print("align: up to date, skipped"); return
     torch.set_num_threads(max(1, min(4, os.cpu_count() or 1)))
     bundle = torchaudio.pipelines.MMS_FA
@@ -55,7 +55,7 @@ def main():
     assert all(b["start"] >= a_["start"] for a_, b in zip(words, words[1:])), "word starts not monotonic"
     matched = len(words) / max(1, meta["word_count"])
     (root / "align").mkdir(exist_ok=True)
-    out.write_text(json.dumps({"key": meta["key"], "matched_fraction": round(matched, 4), "words": words}, indent=2) + "\n")
+    out.write_text(json.dumps({"key": meta["key"], "matched_fraction": round(matched, 4), "words": words}, indent=2) + "\n", encoding="utf-8")
     note(root, f"align: {len(words)}/{meta['word_count']} words ({matched:.1%})")
     print(f"aligned {len(words)} of {meta['word_count']} words ({matched:.1%})")
     if matched < 0.97: sys.exit("FAIL: fewer than 97% of words aligned")

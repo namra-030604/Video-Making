@@ -1,0 +1,68 @@
+name: cross-platform
+on: [push, pull_request, workflow_dispatch]
+jobs:
+  install-and-smoke:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 90
+    env:
+      VSP_CACHE: ${{ github.workspace }}/.vsp-cache
+      PYTHONUTF8: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: '3.13'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - uses: FedericoCarboni/setup-ffmpeg@v3
+      - uses: actions/cache@v4
+        with:
+          path: .vsp-cache
+          key: vsp-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('requirements*.txt', 'vsp.py') }}
+      - run: python vsp.py install --check
+      - run: python -m unittest discover -s tests
+      - run: node --test tests/
+      - run: python scripts/router_test.py
+      - run: python scripts/check_links.py
+      - run: python vsp.py install --no-link --with-chrome
+      - run: python vsp.py verify
+      - run: python vsp.py smoke
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-${{ matrix.os }}
+          path: smoke-test/out/project/out/*.mp4
+          if-no-files-found: ignore
+  wheel-resolution:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv python install 3.12 3.13
+      - shell: bash
+        env:
+          MACOSX_DEPLOYMENT_TARGET: '14.0'
+        run: |
+          for platform in x86_64-unknown-linux-gnu x86_64-pc-windows-msvc aarch64-apple-darwin; do
+            for py in 3.12 3.13; do
+              uv pip compile --no-build --python-platform "$platform" --python-version "$py" \
+                --extra-index-url https://download.pytorch.org/whl/cpu \
+                requirements.txt requirements-torch.txt -o wheel-check.txt
+            done
+          done
+          uv pip compile --no-build --python-platform x86_64-apple-darwin --python-version 3.13 \
+            requirements.txt -o wheel-check.txt
+  windows-git-bash-compat:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - shell: bash
+        run: sh install.sh --help

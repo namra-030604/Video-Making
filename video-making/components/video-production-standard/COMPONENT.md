@@ -17,7 +17,7 @@ earlier one. The failure history behind each rule is in the `lessons-from-failur
 - Create `PROGRESS.md` in the project folder: stage, done, next, the exact resume command, the agent session id
   and the numeric targets. Update it after every finished part (the pack scripts append to it automatically).
 - On (re)start, read PROGRESS.md and the existing outputs; redo only what is missing.
-- Before heavy work run `free -h` and `df -h`. Stop only your OWN idle ffmpeg/Chrome/node leftovers. One heavy
+- Before heavy work run a platform memory check and a disk space check. Stop only your OWN idle ffmpeg/Chrome/node leftovers. One heavy
   process at a time. Lower `render.threads` if less than 4 GB is free (render.mjs refuses a part under 800 MB).
 - Render in parts (`render.part_frames`), verify each part, delete large intermediates after verification.
 - Keep every asset and output inside the project folder; treat reference projects as read-only.

@@ -37,7 +37,7 @@ def main():
     if len(defaults) != 1: print("FAIL: routing table needs exactly one (default) row"); fails += 1
     for r in rows:
         if not os.path.isfile(os.path.join(SKILL_DIR, r["path"])): print("FAIL: missing component", r["path"]); fails += 1
-    cases = json.load(open(os.path.join(ROOT, "tests", "router_cases.json")))
+    cases = json.load(open(os.path.join(ROOT, "tests", "router_cases.json"), encoding="utf-8"))
     print(f"{'prompt':<46} {'routed to':<56} {'matched keywords':<34} result")
     for c in cases:
         r, hits = route(c["prompt"], rows)

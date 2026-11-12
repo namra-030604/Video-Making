@@ -7,7 +7,8 @@
 import {mkdir, writeFile} from 'node:fs/promises';
 import {join} from 'node:path';
 import {launch} from '../lib/browser.mjs';
-import {args, loadProject, run, note} from './common.mjs';
+import {requireVideoTier, args, loadProject, run, note} from './common.mjs';
+try { requireVideoTier(); } catch (e) { console.error(e.message); process.exit(1); }
 
 const A = args(), P = await loadProject(A.project || '.');
 const {root, project, meta, words, duration} = P;

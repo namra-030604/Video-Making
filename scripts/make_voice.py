@@ -68,7 +68,7 @@ def main():
     key = hashlib.sha256(json.dumps([lines, voice, speed, lang, lead, gap, tail, engine]).encode()).hexdigest()[:16]
     (root / "audio").mkdir(exist_ok=True)
     meta_path = root / "audio/voice_meta.json"
-    if not a.force and meta_path.exists() and json.loads(meta_path.read_text()).get("key") == key and (root / "audio/voice.wav").exists():
+    if not a.force and meta_path.exists() and json.loads(meta_path.read_text(encoding="utf-8")).get("key") == key and (root / "audio/voice.wav").exists():
         print("voice: up to date, skipped"); return
     if speed != 1.0:
         print(f"WARNING: voice speed {speed} != 1.0. The standard is speed 1.0; edit words to fit time instead.")
@@ -95,7 +95,7 @@ def main():
     meta = {"key": key, "engine": used, "voice": voice, "speed": speed, "lines": lines, "line_durations": durs, "offsets": offsets,
             "duration": total, "word_count": words, "speech_duration": speech,
             "wpm_overall": words / total * 60, "wpm_speech": words / speech * 60, "pause_fraction": 1 - speech / total}
-    meta_path.write_text(json.dumps(meta, indent=2) + "\n")
+    meta_path.write_text(json.dumps(meta, indent=2) + "\n", encoding="utf-8")
     note(root, f"voice: {len(lines)} lines, {total:.2f}s, {meta['wpm_overall']:.0f} wpm overall, engine {used}")
     print(json.dumps({k: (round(x, 3) if isinstance(x, float) else x) for k, x in meta.items() if k not in ("lines",)}, indent=2))
 

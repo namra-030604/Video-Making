@@ -16,7 +16,8 @@ import {once} from 'node:events';
 import {join, resolve} from 'node:path';
 import {createHash} from 'node:crypto';
 import {launch} from '../lib/browser.mjs';
-import {args, loadProject, note, memAvailableMB, run, probe} from './common.mjs';
+import {requireVideoTier, args, loadProject, note, memAvailableMB, run, probe, toolPath} from './common.mjs';
+try { requireVideoTier(); } catch (e) { console.error(e.message); process.exit(1); }
 
 const A = args();
 const P = await loadProject(A.project || '.');
@@ -56,7 +57,7 @@ if (pending.length) {
       const mem = memAvailableMB();
       if (mem !== null && mem < 800) throw Error(`only ${mem} MB RAM available - stop your own idle processes and re-run (finished parts are kept)`);
       const count = partCount(i), file = partFile(i);
-      const ff = spawn('ffmpeg', ['-hide_banner', '-loglevel', 'error', '-threads', threads, '-y', '-f', 'image2pipe', '-framerate', String(fps), '-vcodec', 'png', '-i', 'pipe:0',
+      const ff = spawn(toolPath('ffmpeg'), ['-hide_banner', '-loglevel', 'error', '-threads', threads, '-y', '-f', 'image2pipe', '-framerate', String(fps), '-vcodec', 'png', '-i', 'pipe:0',
         '-an', '-c:v', 'libx264', '-preset', 'medium', '-crf', crf, '-pix_fmt', 'yuv420p', '-r', String(fps), '-threads', threads, '-movflags', '+faststart', file], {stdio: ['pipe', 'ignore', 'pipe']});
       let err = ''; ff.stderr.on('data', x => err = (err + x).slice(-4000));
       try {
@@ -75,7 +76,7 @@ if (pending.length) {
 for (let i = 0; i < nParts; i++) if (!partOK(i)) throw Error('invalid part ' + i);
 
 const list = join(root, 'out/parts/concat.txt');
-await writeFile(list, Array.from({length: nParts}, (_, i) => `file '${partFile(i)}'`).join('\n') + '\n');
+await writeFile(list, Array.from({length: nParts}, (_, i) => `file 'part_${String(i).padStart(3, '0')}.mp4'`).join('\n') + '\n');
 const concat = join(root, 'out/parts/concat.mp4');
 await run('ffmpeg', ['-hide_banner', '-loglevel', 'error', '-y', '-f', 'concat', '-safe', '0', '-i', list, '-c', 'copy', concat]);
 await mkdir(resolve(finalOut, '..'), {recursive: true});

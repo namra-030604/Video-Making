@@ -27,7 +27,7 @@ def main():
             beats.append({"id": f"{i // 2 + 1}.{i % 2 + 1}", "t": round(k * bl * 2, 3), "section": sec, "action": "TODO: what the cursor/UI/type does", "cut": i % 2 == 0, "sfx": []})
             k += 1; i += 1
         print(json.dumps({"title": "TODO", "bpm": a.bpm, "fps": 60, "size": [1920, 1080], "duration": a.new, "seed": 1, "beats": beats, "voice": None}, indent=2)); return
-    B = json.load(open(a.path)); bl = 60 / B.get("bpm", 120); g = bl * a.grid; fps = B.get("fps", 60); dur = B["duration"]
+    B = json.load(open(a.path, encoding="utf-8")); bl = 60 / B.get("bpm", 120); g = bl * a.grid; fps = B.get("fps", 60); dur = B["duration"]
     errs, warns = [], []
     prev = -1
     for b in B["beats"]:
@@ -52,7 +52,7 @@ def main():
               + (f"   sfx: {', '.join(c['type'] + '@' + str(c['t']) for c in b.get('sfx', []))}" if b.get("sfx") else ""))
     for w in warns: print("WARN ", w)
     for e in errs: print("ERROR", e)
-    if a.snap: json.dump(B, open(a.path, "w"), indent=2); print("snapped and saved")
+    if a.snap: json.dump(B, open(a.path, "w", encoding="utf-8"), indent=2); print("snapped and saved")
     print("OK" if not errs else "FIX THE ERRORS ABOVE"); sys.exit(1 if errs else 0)
 
 if __name__ == "__main__":

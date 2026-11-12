@@ -153,7 +153,7 @@ def main():
         hits = [float(h) for h in a.hits.split(",") if h.strip()]
         write_wav(a.out, music(a.bpm, a.duration, a.seed, a.key, hits, a.style))
     elif a.cmd == "cues":
-        B = json.load(open(a.beats)); n = int(B["duration"] * SR) + SR; tr = np.zeros((n, 2)); cnt = 0
+        B = json.load(open(a.beats, encoding="utf-8")); n = int(B["duration"] * SR) + SR; tr = np.zeros((n, 2)); cnt = 0
         for b in B["beats"]:
             for i, c in enumerate(b.get("sfx", [])):
                 place(tr, sfx(c["type"], B.get("seed", 1) + cnt), float(c["t"]), float(c.get("gain", 0.8))); cnt += 1
@@ -161,7 +161,7 @@ def main():
         print(json.dumps({"sfx_track": a.out, "cues": cnt}))
         return
     elif a.cmd == "bed":
-        B = json.load(open(a.beats)); hits = [b["t"] for b in B["beats"] if b.get("cut") and b["t"] > 0]
+        B = json.load(open(a.beats, encoding="utf-8")); hits = [b["t"] for b in B["beats"] if b.get("cut") and b["t"] > 0]
         write_wav(a.out, music(B.get("bpm", 120), B["duration"], B.get("seed", 1), a.key, hits, a.style))
         print(json.dumps({"music": a.out, "bpm": B.get("bpm", 120), "hits": hits})); return
     print(json.dumps({"wrote": a.out}))

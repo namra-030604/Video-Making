@@ -15,8 +15,8 @@ cannot draw. `PACK` below means the folder this repo was cloned into.
 
 ## 0. Start
 ```bash
-bash $PACK/video-making/components/motion-studio/scripts/new_project.sh my-promo            # 1920x1080 @ 60 fps
-bash $PACK/video-making/components/motion-studio/scripts/new_project.sh my-short --vertical # 1080x1920
+python "$PACK/vsp.py" new --motion my-promo            # 1920x1080 @ 60 fps
+python "$PACK/vsp.py" new --motion my-short --vertical # 1080x1920
 ```
 This copies `templates/index.html`, `templates/mslib.js`, `templates/beats.json` and writes `project.json`
 (size, fps, duration, render settings). Read `references/look-and-motion.md` and `references/critique.md` once.

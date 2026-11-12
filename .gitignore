@@ -16,3 +16,6 @@ video-making/components/motion-graphics/gallery/out/
 video-making/PACK_ROOT
 *.part
 .DS_Store
+
+.vsp-cache/
+wheel-check.txt
