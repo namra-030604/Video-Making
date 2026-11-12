@@ -12,17 +12,39 @@ jobs:
       VSP_CACHE: ${{ github.workspace }}/.vsp-cache
       PYTHONUTF8: '1'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: astral-sh/setup-uv@v6
         with:
           python-version: '3.13'
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.13'
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: '20'
-      - uses: FedericoCarboni/setup-ffmpeg@v3
+      - name: Install ffmpeg (Ubuntu)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: Install ffmpeg (macOS)
+        if: runner.os == 'macOS'
+        run: brew install ffmpeg
+      - name: Install ffmpeg (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          choco install ffmpeg -y --no-progress
+          Add-Content -Path $env:GITHUB_PATH -Value (Join-Path $env:ChocolateyInstall 'bin')
+      - name: Check libx264 (Ubuntu and macOS)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: ffmpeg -hide_banner -encoders | grep -q libx264
+      - name: Check libx264 (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          if (-not (ffmpeg -hide_banner -encoders 2>&1 | Select-String -SimpleMatch 'libx264')) {
+            throw 'ffmpeg does not provide libx264'
+          }
       - uses: actions/cache@v4
         with:
           path: .vsp-cache
@@ -36,7 +58,7 @@ jobs:
       - run: python vsp.py verify
       - run: python vsp.py smoke
       - if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: smoke-${{ matrix.os }}
           path: smoke-test/out/project/out/*.mp4
@@ -44,7 +66,7 @@ jobs:
   wheel-resolution:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: astral-sh/setup-uv@v6
       - run: uv python install 3.12 3.13
       - shell: bash
@@ -63,6 +85,6 @@ jobs:
   windows-git-bash-compat:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - shell: bash
         run: sh install.sh --help

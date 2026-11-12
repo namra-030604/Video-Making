@@ -6,6 +6,7 @@ import json
 import os
 import platform
 import shutil
+import stat
 import subprocess
 import sys
 import tempfile
@@ -15,7 +16,16 @@ import zipfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
-CACHE = Path(os.environ.get('VSP_CACHE') or Path(os.environ.get('XDG_CACHE_HOME', Path.home() / '.cache')) / 'video-skill-pack')
+
+
+def cache_path(environ=None):
+    env = environ if environ is not None else os.environ
+    if env.get('VSP_CACHE'):
+        return Path(env['VSP_CACHE'])
+    return Path(env.get('XDG_CACHE_HOME') or Path.home() / '.cache') / 'video-skill-pack'
+
+
+CACHE = cache_path()
 STATE = ROOT / '.vsp-state'
 VENV = ROOT / '.venv'
 CHROME_VERSION = '156.0.8078.47'
@@ -299,9 +309,33 @@ def install_chrome(key):
     zipname = 'chrome-headless-shell-' + key + '.zip'
     url = 'https://storage.googleapis.com/chrome-for-testing-public/%s/%s/%s' % (CHROME_VERSION, key, zipname)
     archive = download(url, CACHE / 'chrome' / zipname, sha)
-    folder.mkdir(parents=True, exist_ok=True)
-    with zipfile.ZipFile(archive) as z:
-        z.extractall(folder)
+    folder.parent.mkdir(parents=True, exist_ok=True)
+    staging = Path(tempfile.mkdtemp(prefix='chrome-extract-', dir=folder.parent))
+    try:
+        with zipfile.ZipFile(archive) as z:
+            for info in z.infolist():
+                parts = info.filename.rstrip('/').split('/')
+                if not parts or any(part in ('', '.', '..') for part in parts):
+                    fail('Invalid Chrome archive path: ' + info.filename)
+                dest = staging.joinpath(*parts)
+                mode = info.external_attr >> 16
+                if info.is_dir():
+                    dest.mkdir(parents=True, exist_ok=True)
+                elif stat.S_ISLNK(mode):
+                    dest.parent.mkdir(parents=True, exist_ok=True)
+                    dest.symlink_to(z.read(info).decode('utf-8'))
+                else:
+                    dest.parent.mkdir(parents=True, exist_ok=True)
+                    with z.open(info) as src, dest.open('wb') as out:
+                        shutil.copyfileobj(src, out)
+                if mode and not stat.S_ISLNK(mode):
+                    dest.chmod(mode & 0o777)
+        if folder.exists():
+            shutil.rmtree(folder)
+        staging.replace(folder)
+    finally:
+        if staging.exists():
+            shutil.rmtree(staging)
     if key != 'win64':
         binary.chmod(binary.stat().st_mode | 0o755)
     archive.unlink()

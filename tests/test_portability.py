@@ -1,20 +1,55 @@
 import subprocess
 import shutil
+import os
+import stat
 import sys
 import tempfile
 import unittest
+import zipfile
 from types import SimpleNamespace
 from unittest.mock import patch
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / 'scripts'))
 import vsp
+import check_links
 from vsp_common import tool_path, font_path
 
 
 class Portability(unittest.TestCase):
+    def test_windows_skill_path_components(self):
+        self.assertTrue(check_links.is_expected_skill_path(PureWindowsPath('video-making\\SKILL.md')))
+        self.assertFalse(check_links.is_expected_skill_path(PureWindowsPath('other\\SKILL.md')))
+        self.assertEqual(check_links.check(ROOT)[0], [])
+
+    def test_cache_override_is_exact(self):
+        with tempfile.TemporaryDirectory() as td:
+            self.assertEqual(vsp.cache_path({'VSP_CACHE': td, 'XDG_CACHE_HOME': 'unused'}), Path(td))
+            self.assertEqual(vsp.cache_path({'XDG_CACHE_HOME': td}), Path(td) / 'video-skill-pack')
+
+    def test_chrome_zip_preserves_symlinks_and_modes(self):
+        with tempfile.TemporaryDirectory() as td:
+            cache = Path(td) / 'cache'
+            archive = Path(td) / 'chrome.zip'
+            with zipfile.ZipFile(archive, 'w') as z:
+                for name, data, mode in [('bundle/chrome', b'chrome', stat.S_IFREG | 0o755),
+                                         ('bundle/lib.so', b'lib', stat.S_IFREG | 0o644),
+                                         ('bundle/link.so', b'lib.so', stat.S_IFLNK | 0o777)]:
+                    info = zipfile.ZipInfo(name)
+                    info.create_system = 3
+                    info.external_attr = mode << 16
+                    z.writestr(info, data)
+            with patch.object(vsp, 'CACHE', cache), patch.dict(vsp.CHROME, {'test': ('unused', 'bundle/chrome')}), \
+                 patch('vsp.download', return_value=archive), patch('vsp.Path.symlink_to') as symlink:
+                binary = vsp.install_chrome('test')
+            self.assertTrue(binary.is_file())
+            symlink.assert_called_once()
+            self.assertEqual(symlink.call_args.args[0], 'lib.so')
+            if os.name != 'nt':
+                self.assertTrue(binary.stat().st_mode & stat.S_IXUSR)
+
     def test_tool_override_and_path(self):
         with tempfile.TemporaryDirectory() as td:
             exe = Path(td) / 'ffmpeg.exe'; exe.touch()
