@@ -11,9 +11,9 @@ description: >-
 `PACK` = this repo; `PY=$(cat $PACK/.vsp-state/python)` (the venv python chosen by install.sh).
 
 ## One command
-`bash $PACK/scripts/build.sh <project>`: voice -> align -> audio -> stills -> render -> subtitle QC -> final QC.
+`python "$PACK/vsp.py" build <project>`: voice -> align -> audio -> stills -> render -> subtitle QC -> final QC.
 Every step skips itself when its inputs are unchanged, so re-running after a crash continues where it stopped.
-`bash $PACK/scripts/new_project.sh <folder>` scaffolds a project from `examples/hello-world`.
+`python "$PACK/vsp.py" new <folder>` scaffolds a project from `examples/hello-world`.
 
 ## project.json (minimum)
 ```json
@@ -50,7 +50,7 @@ TP <= -1.5 dBTP, no black >= 0.5 s, no freeze >= 0.75 s, no near-blank sample (l
 - Pure function of t: no timers, no Math.random, no Date.now, no state carried between frames.
 
 ## Memory and restarts
-- `free -h` before starting; render.mjs waits for >= 800 MB available before each part; one render at a time.
+- a platform memory check before starting; render.mjs waits for >= 800 MB available before each part; one render at a time.
 - `VSP_DEBUG=1` prints browser and server details; `CHROME=/path/to/chrome` forces a browser;
   `VSP_NO_SERVER=1` uses file:// instead of the local server; `VSP_CACHE` moves the download cache.
 - After a crash just re-run the same command. Delete `out/parts/` only to force a full re-render.

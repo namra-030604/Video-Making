@@ -18,11 +18,11 @@ source page). BY / BY-SA need on-screen or description credit: paste CREDITS.md 
 --cutout  removes the background into <name>_cutout.png with rembg (local, free; model isnet-general-use, Apache-2.0),
           installed in ~/.local/share/rembg-venv. Check the cutout on the contact sheet; hair/glass edges can be rough.
 """
-import argparse, html, json, os, re, subprocess, sys, time, urllib.parse, urllib.request
+import argparse, html, json, os, re, subprocess, sys, time, urllib.parse, urllib.request, shutil, tempfile
 
 UA = "motion-studio/1.0 (video-making pack; personal video project)"
 OV_OK = {"cc0", "pdm", "by", "by-sa"}
-REMBG = os.path.expanduser("~/.local/share/rembg-venv/bin/rembg")
+REMBG = os.environ.get("VSP_REMBG") or shutil.which("rembg")
 REMBG_MODEL = "isnet-general-use"   # Apache-2.0 (IS-Net/DIS). Do NOT use rembg's default bria-rmbg: it is non-commercial (CC BY-NC).
 
 def get(url, timeout=25):
@@ -83,7 +83,7 @@ def main():
     ap.add_argument("--width", type=int, default=1600); ap.add_argument("--cutout", action="store_true"); ap.add_argument("--credits")
     a = ap.parse_args()
     if a.credits:
-        print(open(os.path.join(a.credits, "CREDITS.md")).read()); return
+        print(open(os.path.join(a.credits, "CREDITS.md"), encoding="utf-8").read()); return
     if not a.query: ap.error("query required")
     os.makedirs(a.outdir, exist_ok=True)
     hits, used, errors = [], None, []
@@ -98,7 +98,7 @@ def main():
             errors.append(f"{src}: {e}")
     if not hits: sys.exit(json.dumps({"error": "no free-licensed results", "tried": order, "errors": errors}))
     cj = os.path.join(a.outdir, "credits.json")
-    credits = json.load(open(cj)) if os.path.exists(cj) else []
+    credits = json.load(open(cj, encoding="utf-8")) if os.path.exists(cj) else []
     saved = []
     for h in hits:
         ext = os.path.splitext(urllib.parse.urlparse(h["download"]).path)[1].lower() or (".webm" if a.media == "video" else ".jpg")
@@ -113,7 +113,7 @@ def main():
             if os.path.exists(REMBG):
                 co = os.path.splitext(fn)[0] + "_cutout.png"
                 r = subprocess.run([REMBG, "i", "-m", REMBG_MODEL, fn, co], capture_output=True, text=True,
-                                   env={**os.environ, "NUMBA_CACHE_DIR": "/tmp/numba-cache"})  # Codex sandbox: site-packages is read-only
+                                   env={**os.environ, "NUMBA_CACHE_DIR": os.path.join(tempfile.gettempdir(), "numba-cache")})  # Codex sandbox: site-packages is read-only
                 h["cutout"] = co if r.returncode == 0 else None
                 if r.returncode == 0:
                     try:   # crop to the object so it is easy to place in the canvas
@@ -126,8 +126,8 @@ def main():
             else:
                 errors.append("rembg not installed; no cutout")
         credits.append(h); saved.append(h)
-    json.dump(credits, open(cj, "w"), indent=2)
-    with open(os.path.join(a.outdir, "CREDITS.md"), "w") as fh:
+    json.dump(credits, open(cj, "w", encoding="utf-8"), indent=2)
+    with open(os.path.join(a.outdir, "CREDITS.md"), "w", encoding="utf-8") as fh:
         fh.write("# Asset credits\n\n")
         for c in credits:
             fh.write(f"- **{c['title']}** by {c['creator']}, {c['license']}" + (f" ({c['license_url']})" if c.get("license_url") else "") +

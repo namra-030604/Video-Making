@@ -8,7 +8,7 @@ description: >-
 # Master video: full end-to-end orchestration
 
 `PACK` is the repo root (how to find it: see "Find the pack root" in `../../SKILL.md`). All commands below use
-`$PACK/...`; component links are relative to this file. Run `bash $PACK/install.sh verify` once per session and
+`$PACK/...`; component links are relative to this file. Run `python "$PACK/vsp.py" verify` once per session and
 fix every FAIL before starting.
 
 ## Phase map (do them in this order; open each component when you reach its phase)
@@ -26,16 +26,16 @@ fix every FAIL before starting.
 
 ## Commands
 ```bash
-bash $PACK/scripts/new_project.sh my-video                 # phase 0-2: scaffold (copies examples/hello-world)
+python "$PACK/vsp.py" new my-video                 # phase 0-2: scaffold (copies examples/hello-world)
 # phase 1-6: edit my-video/project.json (lines, size, voice, subtitles, audio) and my-video/index.html (scenes)
 node $PACK/scripts/stills.mjs --project my-video --n 8 --scan   # look at out/stills/contact.png before rendering
 node $PACK/scripts/stills.mjs --project my-video --check        # determinism (pure function of t)
-bash $PACK/scripts/build.sh my-video                       # voice -> align -> audio -> stills -> render -> subtitle QC -> final QC
+python "$PACK/vsp.py" build my-video                       # voice -> align -> audio -> stills -> render -> subtitle QC -> final QC
 "$(cat $PACK/.vsp-state/python)" $PACK/scripts/framediff.py my-video/out/my-video.mp4   # optional motion/flash check
 ```
 `build.sh` is restart-safe: each step skips itself when its inputs are unchanged, so after a crash re-run it.
 The Python steps use the interpreter recorded in `$PACK/.vsp-state/python` (the `.venv`).
-Music-led pieces with no narration: `bash $PACK/video-making/components/motion-studio/scripts/new_project.sh <dir>`
+Music-led pieces with no narration: `python "$PACK/vsp.py" new --motion <dir>`
 and follow [motion-studio](../motion-studio/COMPONENT.md).
 
 ## Working rules (all phases)
@@ -44,7 +44,7 @@ and follow [motion-studio](../motion-studio/COMPONENT.md).
    no time-stretch; fit duration by editing words.
 3. Captions come from forced alignment and stay inside the safe zone. MMS_FA is CC-BY-NC 4.0 (non-commercial):
    tell the user before using it for commercial work.
-4. Look at stills before every full render. One heavy process at a time; `free -h` first.
+4. Look at stills before every full render. One heavy process at a time; a platform memory check first.
 5. Write progress to `PROGRESS.md` after each phase so a new session can resume.
 6. A video is done only when `qc_final.py` prints OVERALL PASS. Report honestly what was not checked.
 7. Record every third-party asset and its license in the project's `assets/CREDITS.md`.

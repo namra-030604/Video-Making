@@ -30,7 +30,7 @@ renderFrame(0.5);
 </script>
 ```
 
-For real geography, `bash install.sh --with-maps` adds three npm modules (`world-atlas` data, `topojson-client`, `d3-geo`). Convert world-atlas TopoJSON with topojson-client, choose a d3-geo projection, then draw with `d3.geoPath(projection, ctx)` before passing projected route points to `FX.mapRoute`.
+For real geography, `python vsp.py install --with-maps` adds three npm modules (`world-atlas` data, `topojson-client`, `d3-geo`). Convert world-atlas TopoJSON with topojson-client, choose a d3-geo projection, then draw with `d3.geoPath(projection, ctx)` before passing projected route points to `FX.mapRoute`.
 
 ## Timing and design
 

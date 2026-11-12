@@ -66,7 +66,7 @@ Format: **What happened -> Root cause -> Rule.** Examples are anonymised; the ru
 ## F. Process and infrastructure
 16. **Lost renders** after machine resets (output folders, shared modules and a venv vanished). **Rule:** render in
     parts, save each verified part inside the project, keep PROGRESS.md current with the resume command; on resume
-    redo only what is missing; `free -h` first, one heavy process at a time, lower threads under 4 GB free.
+    redo only what is missing; a platform memory check first, one heavy process at a time, lower threads under 4 GB free.
 17. **Agent stalls unnoticed** (~20 minutes frozen). **Rule:** periodic check; if log and session have not advanced in
     10 minutes, inspect, stop and resume the same session from PROGRESS.md.
 18. **Wrong baseline** (compared with review stills because finished frames were missing). **Rule:** keep a
@@ -74,8 +74,8 @@ Format: **What happened -> Root cause -> Rule.** Examples are anonymised; the ru
 19. **Caveats instead of fixes.** **Rule:** if a weak spot is fixable within budget, fix it before delivery; report
     only what is genuinely out of scope, with an offer to fix.
 20. **Browser that never navigates.** A managed/enterprise Chrome (policies under `/etc/opt/chrome/policies`) aborted
-    every navigation, so renders hung. **Rule:** `bash install.sh verify` renders a real test page; if the system
-    browser fails, use the pinned chrome-headless-shell (`bash install.sh --with-chrome`).
+    every navigation, so renders hung. **Rule:** `python vsp.py verify` renders a real test page; if the system
+    browser fails, use the pinned chrome-headless-shell (`python vsp.py install --with-chrome`).
 
 # Pre-flight checklist
 - [ ] Open the components `video-production-standard`, this one, `motion-studio`, `qc-and-render`.
@@ -83,8 +83,8 @@ Format: **What happened -> Root cause -> Rule.** Examples are anonymised; the ru
 - [ ] Copy the best previous frames into `review/best_frames/`.
 - [ ] Put numeric targets in PROGRESS.md: duration, wpm, character size, LUFS, framediff, shot count and length.
 - [ ] Free voice only, original characters and script, nothing written outside the project folder.
-- [ ] Restart safety: PROGRESS.md, parts plan, `free -h`, disk space, own idle processes stopped.
-- [ ] `bash $PACK/install.sh verify` passes.
+- [ ] Restart safety: PROGRESS.md, parts plan, a platform memory check, disk space, own idle processes stopped.
+- [ ] `python "$PACK/vsp.py" verify` passes.
 
 # Quality gates (pass/fail, before delivery)
 | # | Gate | Measurable target |

@@ -13,9 +13,13 @@ Usage
 - Short clips (< ~3 s) read slightly off target because the EBU gate needs 400 ms blocks; that is normal.
 """
 import argparse, json, os, re, subprocess, sys, tempfile
+_skill = __import__("pathlib").Path(__file__).resolve().parents[3]
+_root = __import__("pathlib").Path(os.environ.get("VSP_PACK") or ((_skill / "PACK_ROOT").read_text(encoding="utf-8").strip() if (_skill / "PACK_ROOT").exists() else _skill.parent))
+sys.path.insert(0, str(_root / "scripts"))
+from vsp_common import tool_path
 
 def ff(args, capture=True):
-    r = subprocess.run(["ffmpeg", "-hide_banner", "-nostats"] + args, capture_output=capture, text=True)
+    r = subprocess.run([tool_path("ffmpeg"), "-hide_banner", "-nostats"] + args, capture_output=capture, text=True)
     if r.returncode != 0: sys.exit("ffmpeg failed:\n" + (r.stderr or "")[-1500:])
     return r.stderr
 

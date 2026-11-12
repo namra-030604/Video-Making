@@ -1,105 +1,29 @@
-# AGENT_INSTALL: step-by-step for an AI agent
+# Agent install guide
 
-Follow these steps in order. Do not use sudo unless the user asks; do not edit agent config files such as
-`~/.codex/config.toml`; everything installs into this repo (`.venv`, `node_modules`) and one cache folder
-(`${VSP_CACHE:-~/.cache/video-skill-pack}`).
+Use the OS-specific one-line clone and install command in [README.md](README.md). The native command after cloning is `python3 vsp.py install` on Linux/macOS or `py -3 vsp.py install` on Windows. The POSIX `install.sh` and Windows `install.ps1` wrappers call the same Python CLI. `install --check`, `check`, and `install --dry-run` list present/missing system tools and exact install commands without making changes. `--install-system` runs package manager commands only without a password prompt; `--apt` is an alias. If no supported bootstrap Python or pip is available, install uv with `brew install uv` (macOS), `winget install --id astral-sh.uv -e` (Windows), or `python3 -m pip install --user uv==0.13.7` (Linux), then rerun.
 
-## 1. Clone, install, verify
-```bash
-git clone https://github.com/namra-030604/Video-Making && cd Video-Making && bash install.sh && bash install.sh verify
+The installer creates `.venv` with uv-managed Python 3.13 and writes `.vsp-state/python` for compatibility. It uses `requirements.lock.txt` for full video and `requirements-voice.lock.txt` for voice-only mode and verifies SHA256 for all model/font/Chrome downloads. The cache is `VSP_CACHE` or `${XDG_CACHE_HOME:-~/.cache}/video-skill-pack` on every OS. Chrome-for-Testing is pinned per platform. It links `video-making` into existing Codex/Claude skill directories; on Windows it copies by default. Use `python vsp.py link-skills --skills-dir DIR` for another agent, `--copy` to copy, or `--relink` to repoint a previous pack link.
+
+## Supported systems
+
+Linux x86_64, **macOS 14 or newer**, and Windows 10/11 x64 are supported. Full video on macOS requires Apple Silicon. Intel Macs, including x86_64 Python under Rosetta, automatically use voice-only mode with onnxruntime 1.23.2; `--voice-only` or `VSP_VOICE_ONLY=1` forces that tier anywhere. Full video requires Node 18+ and ffmpeg/ffprobe with libx264; voice-only needs ffmpeg for mixing. Python 3.8+ or uv starts the installer; uv creates runtime Python 3.13 (3.12-3.13 supported).
+
+## Verify and work
+
+```text
+python3 vsp.py verify
+python3 vsp.py smoke
+python3 vsp.py new my-video
+python3 vsp.py build my-video
 ```
-- `install.sh` is idempotent (safe to re-run) and checks every download against a pinned sha256.
-- `verify` really runs each part (Kokoro speaks, MMS_FA aligns, Chrome renders a frame, ffmpeg loudnorm...) and
-  prints a PASS/FAIL table. Continue only when it ends with `verify: all required components PASS`.
-- Options: `--with-chrome` (force the pinned headless Chrome), `--skip-aligner`, `--with-maps`,
-  `--with-hyperframes`, `--with-remotion`, `--with-puppeteer`, `--with-blender` (check only), `--apt`.
-  `bash install.sh --help` lists them; `bash install.sh uninstall-notes` shows how to remove everything.
+On Windows PowerShell, replace `python3` with `py -3`.
 
-Remember the absolute path of the clone: below it is called `$PACK` (`export PACK="$PWD"`).
+`verify` exercises the installed tier; full video checks packages, ffmpeg, ffprobe, models, Chrome rendering, routing and links. `smoke` runs the seven stages with restart markers under `smoke-test/out/`, then requires `qc_final.json` to say `pass: true`. `smoke --clean` restarts. `build <dir> --force` rebuilds stages. `new <dir> --motion --vertical` scaffolds a vertical motion-studio project. Use `python vsp.py uninstall-notes` to list installed paths; it removes nothing.
 
-## 2. The skill (installed by step 1)
-There is exactly **one** skill: the folder `video-making/` with one `SKILL.md` (`name: video-making`). It is a
-router: it maps the request to a component under `video-making/components/` (the master video orchestration for a
-whole video, or one part such as captions, voice, effects, 9:16, rendering). Nothing else in the repo is a skill.
+Set `VSP_FFMPEG`, `VSP_FFPROBE`, `VSP_NODE`, `VSP_BLENDER` or `CHROME` for nonstandard executable locations. The finder also checks PATH and common Homebrew, WinGet, Chocolatey, ffmpeg and Blender directories. `--with-blender` checks the optional Blender executable. `--with-maps`, `--with-puppeteer`, `--with-hyperframes` and `--with-remotion` install optional npm packages.
 
-`bash install.sh` ends by running `bash install.sh link-skills`, which:
-- auto-detects `~/.codex` and `~/.claude` and creates `~/.codex/skills/video-making` and/or
-  `~/.claude/skills/video-making` as a **symlink** to `$PACK/video-making` (so `git pull` updates it);
-- prints every path it linked; re-running is safe (`ok (already linked)`);
-- falls back to a **copy** if a symlink cannot be made (or with `--copy`); copies contain `PACK_ROOT` and a
-  `.vsp-copy` marker, and are refreshed on the next `link-skills` (re-run it after `git pull`);
-- **never** replaces a `video-making` folder or symlink it did not create: it warns and leaves it alone.
-- if `video-making` is already a symlink to **another clone of this pack** (or a broken link to a deleted clone),
-  it keeps it and tells you; `bash install.sh link-skills --relink` points it at the current clone. `verify`
-  shows WARN (not FAIL) for the "another clone" case, since that link still works.
+MMS_FA model weights are **CC-BY-NC 4.0 (non-commercial)**. Do not use that model for commercial captions. The first install downloads about 1.26 GB for MMS_FA unless `--skip-aligner` is selected. Run one heavy stage at a time and report unverified outputs honestly.
 
-Options: `--relink`, `--link-codex`, `--link-claude` (create that agent's skills folder even if the agent folder is missing),
-`--skills-dir DIR` (for example a project's `.agents/skills` or `.claude/skills`), `--copy`, and `--no-link`
-(on `install`, skip linking). Manual fallback: `ln -s "$PACK/video-making" ~/.claude/skills/video-making`.
-The skill finds the pack root from `VSP_PACK`, else `video-making/PACK_ROOT` (written by `link-skills`), else
-the parent of the skill folder's real path. `verify` checks the skill is linked, that it is the only `SKILL.md`,
-that every relative path in the skill docs resolves, and runs the router keyword test.
+## Voice-only commands
 
-## 3. Tell the agent where the pack is (AGENTS.md for Codex, CLAUDE.md for Claude)
-Add to the project's or the global instructions file, with the real path filled in:
-```markdown
-## Video making
-- The video skill pack is installed at PACK=<absolute path of the Video-Making clone>.
-- For any video task, load the `video-making` skill (its SKILL.md is a router) and follow the component it points to.
-- Run `bash $PACK/install.sh verify` before the first video of a session.
-- Make projects with `bash $PACK/scripts/new_project.sh <dir>` and build with `bash $PACK/scripts/build.sh <dir>`.
-- A video is finished only when `qc_final.py` prints OVERALL PASS. Free local voices only.
-```
-
-## 4. Smoke test
-```bash
-bash "$PACK/smoke-test/run.sh"          # add --clean to start from scratch
-```
-Makes a ~7 s 540x960 narrated clip through the whole pipeline and ends with `OVERALL PASS`. On this pack's test
-machine (8 cores) the first run took a few minutes, mostly model loading. Re-running skips finished stages.
-
-## 5. Make a first video
-```bash
-bash "$PACK/scripts/new_project.sh" ~/videos/first-video
-# 1. edit project.json: "lines" (one sentence each), width/height (1080x1920 vertical or 1920x1080), "subtitles"
-# 2. edit index.html: draw your scene in renderFrame(t) (keep it a pure function of t)
-node "$PACK/scripts/stills.mjs" --project ~/videos/first-video --n 8 --scan   # look at out/stills/contact.png
-bash "$PACK/scripts/build.sh" ~/videos/first-video
-```
-The router sends a whole-video request to `video-making/components/master-video/MASTER.md`, which walks the
-phases and opens `script-writing`, `voice-and-audio`, `motion-graphics` and the rest in order.
-
-## 6. Troubleshooting
-| Symptom | Fix |
-|---|---|
-| `headless Chrome render` FAIL, or Chrome exits with policy errors | A managed/system Chrome is blocked or too old: `bash install.sh --with-chrome` downloads the pinned chrome-headless-shell; or set `CHROME=/path/to/chrome`. |
-| Chrome fails with `error while loading shared libraries` | Run the `ldd ... | grep 'not found'` command that `install.sh` prints; the Debian package list is in `chrome-headless-shell-linux64/deb.deps` inside the cache. Install those packages (needs admin rights). |
-| `No module named venv` / `ensurepip is not available` | Install `python3-venv`. `install.sh` falls back to `pip install --user` only if a venv cannot be made. |
-| `ffmpeg has no libx264` | Install the distro `ffmpeg` package (Debian/Ubuntu builds include libx264), or a static build and put it first on PATH. |
-| `only N MB RAM available` | Close other heavy programs (only your own), then re-run; finished parts are kept. Keep `render.threads` at 1-2. |
-| Alignment below 97% | Spell numbers and symbols as words; remove words the voice skips; check `audio/line_NN.wav`. |
-| Captions out of the safe zone | Lower `subtitles.font_px` or widen `safe_side`; see the `subtitles-karaoke` component. |
-| `stills.mjs --check` FAIL | The scene uses timers, `Math.random`, `Date.now`, CSS animations, or state from earlier frames. Make it a pure function of t. |
-| `skill installed` WARN/FAIL: linked to another or deleted clone | `bash install.sh link-skills --relink` (only repoints links that target a clone of this pack). |
-| Download fails | Re-run `install.sh` (each download is retried 3 times; finished, checksum-verified files are kept); behind a proxy set `HTTPS_PROXY`. |
-
-## 7. Rules for agents using this pack
-1. Free local voices only (Kokoro, Piper, espeak-ng). Never clone a real person's voice; no paid APIs.
-2. Speed 1.0, no time-stretch; fit duration by editing words.
-3. Look at stills before every full render; never ship without `qc_final.py` OVERALL PASS.
-4. One heavy process at a time; run `free -h` first; stop only processes you started.
-5. Record every third-party asset with its license in `assets/CREDITS.md`; prefer synthesized sound.
-6. MMS_FA alignment is CC-BY-NC 4.0: tell the user before using it for commercial work.
-7. Report honestly what was not checked.
-
-## 8. Not tested yet
-- `install.sh --apt` on a clean machine (the apt package list is from documentation, not a fresh-VM run).
-- The `pip install --user` fallback when venv is unavailable.
-- `--with-remotion`, `--with-hyperframes`, `--with-blender` (Blender is never downloaded; install it yourself from
-  blender.org) and `--with-puppeteer` (needs Node >= 22.12).
-- Map scenes with `--with-maps` at render time.
-- Skill discovery by a real Codex or Claude Code session (here only the files and links were checked); whether an
-  agent follows a symlinked skill folder may differ by version - use `--copy` if it does not.
-- The router test is a keyword check of the routing table, not a test of how an LLM actually routes.
-- `--link-claude` on a machine with Claude Code installed (only `--skills-dir` and `~/.codex/skills` were exercised).
-- macOS, Windows, ARM Linux.
+On Intel Macs, `install` selects voice-only automatically and does not download Torch, MMS_FA, or Chrome. On any OS, force the tier with `python3 vsp.py install --voice-only` (Windows: `py -3 vsp.py install --voice-only`). Run `python3 vsp.py new my-video`, edit `project.json`, then `python3 vsp.py voice my-video` and `python3 vsp.py audio my-video`. `scripts/make_voice.py` and the audio mix scripts remain available. `build`, `smoke`, direct stills/render and subtitle QC exit with one friendly message because the pinned stack does not support Intel Mac video rendering. `verify` checks the voice tier without requiring Node, Torch or Chrome.

@@ -1,7 +1,8 @@
 # Top-level Python pins (verified working together on Python 3.13, Debian 13, CPU only).
 # install.sh installs these into ./.venv. Full resolved set: requirements.lock.txt
 kokoro-onnx==0.6.1
-onnxruntime==1.31.0
+onnxruntime==1.31.0; sys_platform != "darwin" or platform_machine != "x86_64"
+onnxruntime==1.23.2; sys_platform == "darwin" and platform_machine == "x86_64"
 espeakng-loader==0.2.4
 numpy==2.5.4
 soundfile==0.14.0
