@@ -2,7 +2,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import path, {win32, posix} from 'node:path';
 import {spawnSync} from 'node:child_process';
+import {fileURLToPath} from 'node:url';
 import {insideRoot, requestPathToFile, pageFileURL, pageHttpURL, chromeCandidates, orderedChromeCandidates} from '../lib/browser.mjs';
+
+const repoRoot = fileURLToPath(new URL('..', import.meta.url));
 
 const winRoots = {root: 'C:\\project', fontsRoot: 'C:\\cache\\fonts', packRoot: 'C:\\pack'};
 const posixRoots = {root: '/project', fontsRoot: '/cache/fonts', packRoot: '/pack'};
@@ -45,11 +48,12 @@ test('POSIX request mapping and containment', () => {
 });
 
 test('file URL uses pathToFileURL and encodes spaces', () => {
-  const url = pageFileURL(path.join(process.cwd(), 'a b'), 'index.html');
+  const root = path.join(repoRoot, 'a b');
+  const url = pageFileURL(root, 'index.html');
   assert.match(url, /^file:/);
   assert.match(url, /a%20b/);
   assert.match(url, /index.html$/);
-  assert.throws(() => pageFileURL(process.cwd(), '../outside.html'), /outside root/);
+  assert.throws(() => pageFileURL(root, '../outside.html'), /outside root/);
 });
 
 test('HTTP page URLs use native path rules and encode names', () => {
@@ -86,9 +90,11 @@ test('Chrome search order is override, newest pinned cache, then system', () => 
 });
 
 test('voice-only mode blocks direct video scripts with one message', () => {
+  const env = {VSP_VOICE_ONLY: '1'};
+  if (process.platform === 'win32' && process.env.SystemRoot) env.SystemRoot = process.env.SystemRoot;
   for (const script of ['stills.mjs', 'render.mjs', 'subtitle_qc.mjs']) {
-    const result = spawnSync(process.execPath, [path.join(process.cwd(), 'scripts', script), '--project', '.'],
-      {encoding: 'utf8', env: {...process.env, VSP_VOICE_ONLY: '1'}});
+    const scriptPath = fileURLToPath(new URL(`../scripts/${script}`, import.meta.url));
+    const result = spawnSync(process.execPath, [scriptPath, '--project', repoRoot], {encoding: 'utf8', env});
     assert.notEqual(result.status, 0);
     assert.match(result.stderr, /^Voice-only mode:/);
     assert.equal(result.stderr.trim().split('\n').length, 1);

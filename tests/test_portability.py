@@ -6,6 +6,8 @@ import sys
 import tempfile
 import unittest
 import zipfile
+import io
+from contextlib import redirect_stdout
 from types import SimpleNamespace
 from unittest.mock import patch
 from pathlib import Path, PureWindowsPath
@@ -53,13 +55,25 @@ class Portability(unittest.TestCase):
     def test_tool_override_and_path(self):
         with tempfile.TemporaryDirectory() as td:
             exe = Path(td) / 'ffmpeg.exe'; exe.touch()
-            self.assertEqual(tool_path('ffmpeg', system='win32', environ={'VSP_FFMPEG': str(exe)}, which=lambda _: None), str(exe))
-            self.assertEqual(tool_path('ffmpeg', system='win32', environ={}, which=lambda _: str(exe)), str(exe))
+            self.assertEqual(tool_path('ffmpeg', system='win32', environ={'VSP_FFMPEG': str(exe)},
+                                       which=lambda _: None, extra_dirs=[]), str(exe))
+            self.assertEqual(tool_path('ffmpeg', system='win32', environ={}, which=lambda _: str(exe),
+                                       extra_dirs=[]), str(exe))
+
+    def test_well_known_directory_lookup(self):
+        with tempfile.TemporaryDirectory() as td:
+            for os_name, exe_name in [('darwin', 'ffmpeg'), ('win32', 'ffmpeg.exe')]:
+                with self.subTest(os_name=os_name):
+                    exe = Path(td) / exe_name
+                    exe.touch()
+                    self.assertEqual(tool_path('ffmpeg', system=os_name, environ={}, which=lambda _: None,
+                                               extra_dirs=[td]), str(exe))
+                    exe.unlink()
 
     def test_missing_messages(self):
         for os_name, expected in [('linux', 'apt-get'), ('darwin', 'brew install'), ('win32', 'winget install')]:
             with self.subTest(os_name=os_name), self.assertRaisesRegex(FileNotFoundError, expected):
-                tool_path('ffmpeg', system=os_name, environ={}, which=lambda _: None)
+                tool_path('ffmpeg', system=os_name, environ={}, which=lambda _: None, extra_dirs=[])
 
     def test_platform_and_intel_gate(self):
         self.assertEqual(vsp.os_key('linux', 'x86_64'), 'linux64')
@@ -101,12 +115,22 @@ class Portability(unittest.TestCase):
             self.assertFalse(any('torch' in str(part).lower() for call in run.call_args_list for part in call.args))
             chrome.assert_not_called()
 
+    def check_plan(self, voice):
+        output = io.StringIO()
+        def command_output(argv, **_):
+            return 'v20.0.0' if '--version' in argv else 'libx264'
+        with patch('vsp_common.tool_path', side_effect=lambda name, **_: '/fake/' + name), \
+             patch('vsp.subprocess.check_output', side_effect=command_output), \
+             patch('vsp.shutil.which', return_value='/fake/uv'), \
+             patch('vsp.system_manager', return_value=None), redirect_stdout(output):
+            result = vsp.check_system(dry=True, voice=voice)
+        self.assertTrue(result)
+        return output.getvalue()
+
     def test_voice_only_check(self):
-        p = subprocess.run([sys.executable, str(ROOT / 'vsp.py'), 'install', '--check', '--voice-only'],
-                           cwd=ROOT, capture_output=True, text=True)
-        self.assertEqual(p.returncode, 0)
-        self.assertIn('requirements-voice.lock.txt', p.stdout)
-        self.assertNotIn('Chrome-for-Testing', p.stdout)
+        output = self.check_plan(voice=True)
+        self.assertIn('requirements-voice.lock.txt', output)
+        self.assertNotIn('Chrome-for-Testing', output)
 
     def test_system_command_plans(self):
         self.assertIn('apt-get', vsp.system_commands(['node'], 'apt')[0])
@@ -148,14 +172,16 @@ class Portability(unittest.TestCase):
                 vsp.download(src.as_uri(), dst, '0' * 64)
 
     def test_check_no_changes(self):
-        p = subprocess.run([sys.executable, str(ROOT / 'vsp.py'), 'install', '--check'], cwd=ROOT, capture_output=True, text=True)
-        self.assertIn('ffmpeg', p.stdout)
-        self.assertIn(p.returncode, (0, 1))
+        with tempfile.TemporaryDirectory() as td, patch.object(vsp, 'STATE', Path(td) / 'state'):
+            output = self.check_plan(voice=False)
+            self.assertIn('ffmpeg', output)
+            self.assertIn('requirements.lock.txt', output)
+            self.assertFalse(vsp.STATE.exists())
 
     def test_legacy_leading_install_options(self):
-        explicit = subprocess.run([sys.executable, str(ROOT / 'vsp.py'), 'install', '--apt', '--check'],
+        explicit = subprocess.run([sys.executable, str(ROOT / 'vsp.py'), 'install', '--apt', '--help'],
                                   cwd=ROOT, capture_output=True, text=True)
-        legacy = subprocess.run([sys.executable, str(ROOT / 'vsp.py'), '--apt', '--check'],
+        legacy = subprocess.run([sys.executable, str(ROOT / 'vsp.py'), '--apt', '--help'],
                                 cwd=ROOT, capture_output=True, text=True)
         self.assertEqual((legacy.returncode, legacy.stdout, legacy.stderr),
                          (explicit.returncode, explicit.stdout, explicit.stderr))

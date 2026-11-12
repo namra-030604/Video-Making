@@ -31,8 +31,12 @@ def vget(cfg, path, default=None):
     return cur
 
 
-def tool_path(name: str, required: bool = True, system=None, environ=None, which=None):
-    """Find an executable from override, PATH, then common OS install directories."""
+def tool_path(name: str, required: bool = True, system=None, environ=None, which=None, extra_dirs=None):
+    """Find an executable from override, PATH, then common OS install directories.
+
+    extra_dirs replaces the OS directories when supplied, so discovery can be
+    tested without depending on tools installed on the test machine.
+    """
     import glob
     import shutil
     system = system or sys.platform
@@ -46,8 +50,9 @@ def tool_path(name: str, required: bool = True, system=None, environ=None, which
         return None
     found = which(name) or (which(name + '.exe') if system == 'win32' else None)
     if found: return found
-    dirs = []
-    if system == 'darwin':
+    if extra_dirs is not None:
+        dirs = extra_dirs
+    elif system == 'darwin':
         dirs = ['/opt/homebrew/bin', '/usr/local/bin']
         if name == 'blender': dirs += ['/Applications/Blender.app/Contents/MacOS']
     elif system == 'win32':
@@ -55,6 +60,8 @@ def tool_path(name: str, required: bool = True, system=None, environ=None, which
                 str(Path(env.get('ProgramData', 'C:/ProgramData')) / 'chocolatey/bin'), 'C:/ffmpeg/bin']
         if name == 'blender':
             dirs += [str(Path(p)) for p in glob.glob(str(Path(env.get('ProgramFiles', 'C:/Program Files')) / 'Blender Foundation/Blender*/'))]
+    else:
+        dirs = []
     exe = name + ('.exe' if system == 'win32' else '')
     for d in dirs:
         p = Path(d) / exe
